@@ -1,0 +1,55 @@
+import { db } from '../database';
+import {
+  TransactionSchema,
+  type Transaction,
+  type TransactionInput,
+} from '../schemas/transaction';
+
+export const transactionsRepo = {
+  async list(): Promise<Transaction[]> {
+    return db.transactions.orderBy('date').reverse().toArray();
+  },
+
+  async get(id: string): Promise<Transaction | undefined> {
+    return db.transactions.get(id);
+  },
+
+  async create(input: TransactionInput): Promise<Transaction> {
+    const tx: Transaction = {
+      ...input,
+      id: crypto.randomUUID(),
+    } as Transaction;
+    TransactionSchema.parse(tx);
+    await db.transactions.add(tx);
+    return tx;
+  },
+
+  async update(id: string, patch: Partial<Transaction>): Promise<Transaction> {
+    const existing = await db.transactions.get(id);
+    if (!existing) throw new Error(`Transaction ${id} not found`);
+    const updated = { ...existing, ...patch, id: existing.id } as Transaction;
+    TransactionSchema.parse(updated);
+    await db.transactions.put(updated);
+    return updated;
+  },
+
+  async delete(id: string): Promise<void> {
+    await db.transactions.delete(id);
+  },
+
+  async listForCard(cardId: string): Promise<Transaction[]> {
+    return db.transactions.where('cardId').equals(cardId).toArray();
+  },
+
+  async listMsiForCard(cardId: string): Promise<Transaction[]> {
+    const all = await db.transactions.where('cardId').equals(cardId).toArray();
+    return all.filter((tx) => tx.type === 'expense_msi');
+  },
+
+  async listForDateRange(fromIso: string, toIso: string): Promise<Transaction[]> {
+    return db.transactions
+      .where('date')
+      .between(fromIso, toIso, true, true)
+      .toArray();
+  },
+};
