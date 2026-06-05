@@ -28,7 +28,7 @@ const cardFormSchema = z.object({
     .max(60, "Máximo 60 caracteres"),
   holderName: z
     .string()
-    .min(1, "Ingresá el titular")
+    .min(1, "Ingresá el nombre para la tarjeta")
     .max(80, "Máximo 80 caracteres"),
   last4: z
     .string()
@@ -154,11 +154,11 @@ export function CardForm({
           htmlFor="card-holder"
           className="text-sm font-medium text-[var(--color-text-body)]"
         >
-          Titular
+          Nombre para la tarjeta
         </label>
         <Input
           id="card-holder"
-          placeholder="Nombre completo"
+          placeholder="Como aparece en la tarjeta"
           invalid={!!errors.holderName}
           autoComplete="off"
           {...register("holderName")}
