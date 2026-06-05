@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   getMsiMonthlyAmount,
+  getMsiInstallmentAmount,
   computeMsiSchedule,
   getActiveMsiForCurrentMonth,
 } from '../msi';
@@ -29,9 +30,9 @@ describe('getMsiMonthlyAmount', () => {
     expect(getMsiMonthlyAmount(1200, 12)).toBe(100);
   });
 
-  it('redondea hacia arriba al centavo para no perder precisión', () => {
-    // 1000 / 3 = 333.333... → 333.34
-    expect(getMsiMonthlyAmount(1000, 3)).toBe(333.34);
+  it('redondea hacia ABAJO al centavo (la última cuota absorbe el residuo)', () => {
+    // 1000 / 3 = 333.333... → 333.33 (la última será 333.34)
+    expect(getMsiMonthlyAmount(1000, 3)).toBe(333.33);
   });
 
   it('maneja 18 meses', () => {
@@ -54,15 +55,74 @@ describe('getMsiMonthlyAmount', () => {
   });
 });
 
+describe('getMsiInstallmentAmount', () => {
+  it('devuelve la cuota regular para índices 1..N-1', () => {
+    const amount = 1000;
+    const months = 3;
+    for (let i = 1; i < months; i += 1) {
+      expect(getMsiInstallmentAmount(amount, months, i)).toBe(333.33);
+    }
+  });
+
+  it('la última cuota absorbe el residuo', () => {
+    // 1000 / 3 → 3 cuotas: 333.33, 333.33, 333.34
+    expect(getMsiInstallmentAmount(1000, 3, 3)).toBe(333.34);
+  });
+
+  it('Σ de N cuotas === amount exacto (invariante del motor)', () => {
+    const cases: Array<[number, 3 | 6 | 9 | 12 | 18 | 24]> = [
+      [1000, 3],
+      [100, 3],
+      [999, 6],
+      [1234, 9],
+      [1200, 12],
+      [1500, 18],
+      [2400, 24],
+      [1, 3],
+      [99, 6],
+    ];
+    for (const [amount, months] of cases) {
+      const sum = Array.from({ length: months }, (_, i) =>
+        getMsiInstallmentAmount(amount, months, i + 1),
+      ).reduce((a, b) => a + b, 0);
+      expect(sum).toBe(amount);
+    }
+  });
+
+  it('Σ preserva exactitud para montos con muchos decimales', () => {
+    // Caso patológico: 10.01 / 3 → varias decimales, pero la suma debe cerrar.
+    const amount = 10.01;
+    const months = 3;
+    const sum = Array.from({ length: months }, (_, i) =>
+      getMsiInstallmentAmount(amount, months, i + 1),
+    ).reduce((a, b) => a + b, 0);
+    expect(Math.round(sum * 100) / 100).toBe(amount);
+  });
+
+  it('devuelve 0 para monthIndex fuera de rango', () => {
+    expect(getMsiInstallmentAmount(1000, 3, 0)).toBe(0);
+    expect(getMsiInstallmentAmount(1000, 3, 4)).toBe(0);
+    expect(getMsiInstallmentAmount(1000, 3, -1)).toBe(0);
+  });
+
+  it('devuelve 0 para monto inválido', () => {
+    expect(getMsiInstallmentAmount(0, 3, 1)).toBe(0);
+    expect(getMsiInstallmentAmount(-100, 3, 1)).toBe(0);
+  });
+});
+
 describe('computeMsiSchedule', () => {
-  it('genera N entradas empezando el mes siguiente a msiStartDate', () => {
-    // amount=1000/3=333.33... → redondeado a 333.34
+  it('genera N entradas con la última absorbiendo el residuo (Σ === amount)', () => {
+    // amount=1000/3=333.33... → regular 333.33, última 333.34
     const tx = makeMsi({ amount: 1000, msiMonths: 3, msiStartDate: '2026-05-15T10:00:00.000Z' });
     const schedule = computeMsiSchedule(tx, today);
     expect(schedule).toHaveLength(3);
-    expect(schedule[0]).toEqual({ year: 2026, month: 6, amount: 333.34 });
-    expect(schedule[1]).toEqual({ year: 2026, month: 7, amount: 333.34 });
+    expect(schedule[0]).toEqual({ year: 2026, month: 6, amount: 333.33 });
+    expect(schedule[1]).toEqual({ year: 2026, month: 7, amount: 333.33 });
     expect(schedule[2]).toEqual({ year: 2026, month: 8, amount: 333.34 });
+    // Invariante
+    const sum = schedule.reduce((acc, e) => acc + e.amount, 0);
+    expect(sum).toBe(1000);
   });
 
   it('atraviesa fin de año correctamente (diciembre → enero)', () => {
@@ -89,6 +149,22 @@ describe('computeMsiSchedule', () => {
     const tx = makeMsi({ msiMonths: 6, msiStartDate: '2026-01-31T10:00:00.000Z' });
     const schedule = computeMsiSchedule(tx, today);
     expect(schedule[0]).toEqual({ year: 2026, month: 2, amount: expect.any(Number) });
+  });
+
+  it('Σ del schedule completo === amount (invariante global, varios plazos)', () => {
+    const cases: Array<[number, 3 | 6 | 9 | 12 | 18 | 24]> = [
+      [1000, 3],
+      [999, 6],
+      [1234, 9],
+      [1500, 18],
+      [7777, 24],
+    ];
+    for (const [amount, msiMonths] of cases) {
+      const tx = makeMsi({ amount, msiMonths, msiStartDate: '2026-05-15T10:00:00.000Z' });
+      const schedule = computeMsiSchedule(tx, today);
+      const sum = schedule.reduce((acc, e) => acc + e.amount, 0);
+      expect(sum).toBe(amount);
+    }
   });
 });
 
