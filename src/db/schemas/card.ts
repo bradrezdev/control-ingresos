@@ -4,7 +4,7 @@ export const CardSchema = z.object({
   id: z.uuid(),
   bank: z.string().min(1).max(60),
   holderName: z.string().min(1).max(80),
-  last4: z.string().regex(/^\d{4}$/, { error: 'last4 must be exactly 4 digits' }),
+  last4: z.string().regex(/^\d{4}$/).or(z.literal("")).default(""),
   cutDay: z.number().int().min(1).max(31),
   paymentDueDay: z.number().int().min(1).max(31),
   creditLimit: z.number().positive().optional(),

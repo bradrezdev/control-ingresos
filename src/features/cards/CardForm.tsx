@@ -30,9 +30,6 @@ const cardFormSchema = z.object({
     .string()
     .min(1, "Ingresá el nombre para la tarjeta")
     .max(80, "Máximo 80 caracteres"),
-  last4: z
-    .string()
-    .regex(/^\d{4}$/, "Debe ser exactamente 4 dígitos"),
   cutDay: z
     .number({ error: "Ingresá un día entre 1 y 31" })
     .int("Debe ser entero")
@@ -103,7 +100,7 @@ export function CardForm({
     const input: CardInput = {
       bank: values.bank.trim(),
       holderName: values.holderName.trim(),
-      last4: values.last4,
+      last4: card?.last4 ?? "",
       cutDay: values.cutDay,
       paymentDueDay: values.paymentDueDay,
       // New cards start at priority 0; on edit, preserve current.
@@ -166,29 +163,6 @@ export function CardForm({
         {errors.holderName ? (
           <p role="alert" className="text-xs text-[var(--color-danger)]">
             {errors.holderName.message}
-          </p>
-        ) : null}
-      </div>
-
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="card-last4"
-          className="text-sm font-medium text-[var(--color-text-body)]"
-        >
-          Últimos 4 dígitos
-        </label>
-        <Input
-          id="card-last4"
-          inputMode="numeric"
-          maxLength={4}
-          placeholder="1234"
-          invalid={!!errors.last4}
-          autoComplete="off"
-          {...register("last4")}
-        />
-        {errors.last4 ? (
-          <p role="alert" className="text-xs text-[var(--color-danger)]">
-            {errors.last4.message}
           </p>
         ) : null}
       </div>
@@ -287,7 +261,6 @@ function cardToFormValues(card: Card | undefined): CardFormValues {
     return {
       bank: "",
       holderName: "",
-      last4: "",
       cutDay: 1,
       paymentDueDay: 15,
       creditLimit: undefined,
@@ -295,9 +268,8 @@ function cardToFormValues(card: Card | undefined): CardFormValues {
   }
   return {
     bank: card.bank,
-    holderName: card.holderName,
-    last4: card.last4,
-    cutDay: card.cutDay,
+      holderName: card.holderName,
+      cutDay: card.cutDay,
     paymentDueDay: card.paymentDueDay,
     creditLimit: card.creditLimit,
   };
