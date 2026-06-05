@@ -24,7 +24,7 @@ const inputVariants = cva(
     variants: {
       size: {
         sm: "h-9 px-3 text-sm rounded-[var(--radius-sm)]",
-        md: "h-11 px-4 text-sm rounded-[var(--radius-md)]",
+        md: "h-11 px-4 text-base rounded-[var(--radius-md)]",
         lg: "h-12 px-5 text-base rounded-[var(--radius-md)]",
       },
       state: {
@@ -94,7 +94,7 @@ export function Input({
         className={cn(
           "flex-1 min-w-0 bg-transparent border-0 outline-none",
           "text-[var(--color-text-body)] placeholder:text-[var(--color-text-muted)]",
-          size === "sm" ? "text-sm" : size === "lg" ? "text-base" : "text-sm",
+          size === "sm" ? "text-sm" : size === "lg" ? "text-base" : "text-base",
           className,
         )}
         aria-invalid={invalid || undefined}

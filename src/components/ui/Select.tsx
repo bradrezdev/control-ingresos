@@ -26,7 +26,7 @@ export interface SelectProps
 
 const sizeClasses: Record<NonNullable<SelectProps["size"]>, string> = {
   sm: "h-9 text-sm",
-  md: "h-11 text-sm",
+  md: "h-11 text-base",
   lg: "h-12 text-base",
 };
 

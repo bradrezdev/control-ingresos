@@ -24,7 +24,7 @@ export function Textarea({
       className={cn(
         "w-full bg-[var(--color-surface-inset)] text-[var(--color-text-body)]",
         "border border-[var(--color-border-subtle)]",
-        "rounded-[var(--radius-md)] px-4 py-3 text-sm",
+        "rounded-[var(--radius-md)] px-4 py-3 text-base",
         "placeholder:text-[var(--color-text-muted)]",
         "transition-colors duration-[var(--duration-fast)] resize-y",
         "focus:outline-none focus:border-[var(--color-border-focus)] focus:bg-[var(--color-surface)]",
