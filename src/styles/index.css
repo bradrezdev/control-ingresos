@@ -1,0 +1,154 @@
+@import "tailwindcss";
+
+/* ---------------------------------------------------------------------------
+ * Design Tokens — control-ingresos
+ * Apple HIG-inspired neutrals, single Inter family, glass surfaces, 24px base.
+ * ADR-05: Inter only. ADR-10: Tailwind 4 @theme CSS-first.
+ * --------------------------------------------------------------------------- */
+
+@theme {
+  /* Neutral palette (Apple zinc with a subtle cool/blue tint) */
+  --color-canvas: #fbfbfb;
+  --color-canvas-deep: #f4f4f6;
+  --color-surface: #ffffff;
+  --color-surface-elevated: #ffffff;
+  --color-surface-inset: #f6f6f8;
+  --color-overlay: rgb(0 0 0 / 0.04);
+
+  /* Borders (subtle, oklch) */
+  --color-border-subtle: oklch(0.92 0.005 240);
+  --color-border-strong: oklch(0.86 0.008 240);
+  --color-border-focus: #062a63;
+
+  /* Brand */
+  --color-primary: #062a63;
+  --color-primary-hover: #051f4d;
+  --color-secondary: #0cbce5;
+
+  /* Semantic */
+  --color-success: #10b981;
+  --color-warning: #f59e0b;
+  --color-danger: #ef4444;
+  --color-danger-neon: oklch(0.65 0.32 25);
+
+  /* Text */
+  --color-text-primary: #062a63;
+  --color-text-body: #1f2937;
+  --color-text-muted: oklch(0.45 0.005 240);
+  --color-text-inverse: #ffffff;
+
+  /* Glass surface */
+  --color-glass-bg: rgb(255 255 255 / 0.7);
+  --color-glass-border: rgb(255 255 255 / 0.5);
+  --glass-blur: 20px;
+  --glass-saturate: 180%;
+
+  /* Radii */
+  --radius-sm: 8px;
+  --radius-md: 16px;
+  --radius-lg: 24px;
+  --radius-xl: 32px;
+  --radius-full: 9999px;
+
+  /* Shadows — Apple-spec diffusion */
+  --shadow-card: 0 2px 4px rgb(0 0 0 / 0.02), 0 1px 2px rgb(0 0 0 / 0.04);
+  --shadow-card-hover: 0 10px 20px rgb(0 0 0 / 0.04), 0 2px 6px rgb(0 0 0 / 0.04);
+  --shadow-glass: 0 8px 32px 0 rgb(6 42 99 / 0.05);
+  --shadow-cta: 0 12px 24px -8px rgb(6 42 99 / 0.25);
+
+  /* Typography — Inter (Fontsource) */
+  --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "SF Mono", "JetBrains Mono", ui-monospace, monospace;
+
+  /* Motion */
+  --ease-out-soft: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-soft: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 150ms;
+  --duration-base: 250ms;
+  --duration-slow: 400ms;
+}
+
+/* Dark mode — borders only, no shadows (per ONANO) */
+@media (prefers-color-scheme: dark) {
+  @theme {
+    --color-canvas: #0a0a0c;
+    --color-canvas-deep: #111114;
+    --color-surface: #14141a;
+    --color-surface-elevated: #1a1a22;
+    --color-surface-inset: #0f0f14;
+    --color-overlay: rgb(255 255 255 / 0.04);
+
+    --color-border-subtle: oklch(0.28 0.005 240);
+    --color-border-strong: oklch(0.36 0.008 240);
+
+    --color-text-body: #e5e7eb;
+    --color-text-muted: oklch(0.65 0.005 240);
+
+    --color-glass-bg: rgb(20 20 26 / 0.7);
+    --color-glass-border: rgb(255 255 255 / 0.08);
+
+    --shadow-card: none;
+    --shadow-card-hover: none;
+    --shadow-glass: 0 8px 32px 0 rgb(0 0 0 / 0.35);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Glass utility — apply with `className="glass"` on any element.
+ * --------------------------------------------------------------------------- */
+@utility glass {
+  background-color: var(--color-glass-bg);
+  backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturate));
+  border: 1px solid var(--color-glass-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-glass);
+  position: relative;
+  overflow: hidden;
+
+  &::before {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    top: 0;
+    height: 1px;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgb(255 255 255 / 0.6),
+      transparent
+    );
+    pointer-events: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Base
+ * --------------------------------------------------------------------------- */
+html,
+body,
+#root {
+  height: 100%;
+  min-height: 100dvh;
+}
+
+body {
+  background-color: var(--color-canvas);
+  color: var(--color-text-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: "ss01", "cv11";
+  margin: 0;
+  text-rendering: optimizeLegibility;
+}
+
+button {
+  font-family: inherit;
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .glass {
+    background-color: var(--color-surface);
+  }
+}
