@@ -1,10 +1,23 @@
+import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate, Outlet } from "react-router";
 import { AppShell } from "@/components/layout/Sidebar";
-import { Dashboard } from "@/pages/Dashboard";
-import { Transactions } from "@/pages/Transactions";
-import { Cards } from "@/pages/Cards";
-import { Debts } from "@/pages/Debts";
-import { Settings } from "@/pages/Settings";
+import { PageSkeleton } from "@/components/feedback/PageSkeleton";
+
+const Dashboard = lazy(() =>
+  import("@/pages/Dashboard").then((m) => ({ default: m.Dashboard })),
+);
+const Transactions = lazy(() =>
+  import("@/pages/Transactions").then((m) => ({ default: m.Transactions })),
+);
+const Cards = lazy(() =>
+  import("@/pages/Cards").then((m) => ({ default: m.Cards })),
+);
+const Debts = lazy(() =>
+  import("@/pages/Debts").then((m) => ({ default: m.Debts })),
+);
+const Settings = lazy(() =>
+  import("@/pages/Settings").then((m) => ({ default: m.Settings })),
+);
 
 function NotFound(): React.JSX.Element {
   return (
@@ -17,6 +30,10 @@ function NotFound(): React.JSX.Element {
   );
 }
 
+function LazyPage({ children }: { children: React.ReactNode }): React.JSX.Element {
+  return <Suspense fallback={<PageSkeleton />}>{children}</Suspense>;
+}
+
 export const router = createBrowserRouter([
   {
     path: "/",
@@ -26,11 +43,46 @@ export const router = createBrowserRouter([
       </AppShell>
     ),
     children: [
-      { index: true, element: <Dashboard /> },
-      { path: "transactions", element: <Transactions /> },
-      { path: "cards", element: <Cards /> },
-      { path: "debts", element: <Debts /> },
-      { path: "settings", element: <Settings /> },
+      {
+        index: true,
+        element: (
+          <LazyPage>
+            <Dashboard />
+          </LazyPage>
+        ),
+      },
+      {
+        path: "transactions",
+        element: (
+          <LazyPage>
+            <Transactions />
+          </LazyPage>
+        ),
+      },
+      {
+        path: "cards",
+        element: (
+          <LazyPage>
+            <Cards />
+          </LazyPage>
+        ),
+      },
+      {
+        path: "debts",
+        element: (
+          <LazyPage>
+            <Debts />
+          </LazyPage>
+        ),
+      },
+      {
+        path: "settings",
+        element: (
+          <LazyPage>
+            <Settings />
+          </LazyPage>
+        ),
+      },
       { path: "*", element: <Navigate to="/" replace /> },
     ],
   },

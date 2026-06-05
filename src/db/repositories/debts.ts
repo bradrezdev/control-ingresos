@@ -41,4 +41,28 @@ export const debtsRepo = {
   async delete(id: string): Promise<void> {
     await db.debts.delete(id);
   },
+
+  /**
+   * Apply a payment to a debt. `amount` is the value to subtract from
+   * `remainingBalance`. The result is clamped at 0 (a payment larger
+   * than the remaining balance is allowed and zeroes the debt).
+   */
+  async recordPayment(id: string, amount: number): Promise<Debt> {
+    const existing = await db.debts.get(id);
+    if (!existing) throw new Error(`Debt ${id} not found`);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      throw new Error("Payment amount must be a positive number");
+    }
+    const newBalance = Math.max(0, existing.remainingBalance - amount);
+    const updated: Debt = {
+      ...existing,
+      remainingBalance: newBalance,
+      id: existing.id,
+      createdAt: existing.createdAt,
+      updatedAt: new Date().toISOString(),
+    };
+    DebtSchema.parse(updated);
+    await db.debts.put(updated);
+    return updated;
+  },
 };
