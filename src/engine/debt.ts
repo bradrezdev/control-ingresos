@@ -1,5 +1,6 @@
 import type { Transaction } from '@/db/schemas/transaction';
 import { MSI_TERM, type MsiTerm } from '@/db/schemas/transaction';
+import { type MsiTenure, getMsiInstallmentAmount } from './msi';
 
 export interface MsiTenureSummary {
   activeCount: number;
@@ -13,6 +14,9 @@ export interface MsiTenureSummary {
  *
  * `totalDebt` = suma sobre cada MSI activa de
  *   (mesesRestantes × montoMensual)
+ *
+ * El monto mensual respeta el invariante del motor: la última cuota absorbe
+ * el residuo (getMsiInstallmentAmount en vez del cálculo duplicado anterior).
  */
 export function summarizeMsiByTenure(
   transactions: Transaction[],
@@ -35,7 +39,11 @@ export function summarizeMsiByTenure(
     if (monthsSinceStart < 1 || monthsSinceStart > tx.msiMonths) continue;
 
     const remaining = tx.msiMonths - monthsSinceStart + 1; // incluye el mes actual
-    const monthly = Math.ceil((tx.amount / tx.msiMonths) * 100) / 100;
+    const monthly = getMsiInstallmentAmount(
+      tx.amount,
+      tx.msiMonths as MsiTenure,
+      monthsSinceStart,
+    );
     result[term].activeCount += 1;
     result[term].totalDebt += remaining * monthly;
   }

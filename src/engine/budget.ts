@@ -1,4 +1,5 @@
 import type { Transaction } from '@/db/schemas/transaction';
+import { type MsiTenure, getMsiInstallmentAmount } from './msi';
 
 export interface MonthlySpending {
   total: number;
@@ -15,6 +16,8 @@ export interface BudgetStatusInfo {
 /**
  * Suma de gastos (no ingresos) del mes actual de `today`. Para gastos MSI sólo
  * se cuenta la cuota que cae en este mes (mismo cálculo que el calendario).
+ * El monto de la cuota MSI respeta el invariante del motor: la última cuota
+ * absorbe el residuo.
  */
 export function computeMonthlySpending(
   transactions: Transaction[],
@@ -36,17 +39,19 @@ export function computeMonthlySpending(
     let amount = tx.amount;
     if (tx.type === 'expense_msi') {
       // Para MSI la fecha `date` es la fecha original de compra. La cuota del
-      // mes actual se aproxima con prorrateo uniforme. La función
-      // getMsiMonthlyAmount devuelve el valor uniforme; si el mes actual está
+      // mes actual se aproxima con prorrateo uniforme. Si el mes actual está
       // fuera del calendario, no contamos nada.
-      const monthly = Math.ceil((tx.amount / tx.msiMonths) * 100) / 100;
       const start = new Date(tx.msiStartDate);
       const startYear = start.getUTCFullYear();
       const startMonth = start.getUTCMonth() + 1;
       const monthsSinceStart =
         (year - startYear) * 12 + (month - startMonth);
       if (monthsSinceStart < 1 || monthsSinceStart > tx.msiMonths) continue;
-      amount = monthly;
+      amount = getMsiInstallmentAmount(
+        tx.amount,
+        tx.msiMonths as MsiTenure,
+        monthsSinceStart,
+      );
     }
 
     total += amount;
@@ -58,10 +63,10 @@ export function computeMonthlySpending(
 }
 
 /**
- * Determina el estado del presupuesto según porcentaje de uso:
- *   safe    → < 60%
- *   warning → 60-80%
- *   danger  → > 80%
+ * Determina el estado del presupuesto según porcentaje de uso (per spec):
+ *   safe    → < 80%
+ *   warning → 80%–99%  (advertencia explícita al usuario al llegar al 80%)
+ *   danger  → ≥ 100%   (excedió el límite)
  *
  * Si el límite es 0 (no configurado), se devuelve percent=0 y status='safe'.
  */
@@ -74,15 +79,16 @@ export function computeBudgetStatus(
   }
   const percent = (spending / monthlyLimit) * 100;
   let status: BudgetStatus;
-  if (percent < 60) status = 'safe';
-  else if (percent <= 80) status = 'warning';
+  if (percent < 80) status = 'safe';
+  else if (percent < 100) status = 'warning';
   else status = 'danger';
   return { percent, status };
 }
 
 /**
  * Suma de pagos de una tarjeta en el mes actual: gastos directos + cuota MSI
- * del mes (si la MSI tiene calendario en este mes).
+ * del mes (si la MSI tiene calendario en este mes). La cuota MSI respeta el
+ * invariante del motor: la última cuota absorbe el residuo.
  */
 export function computePaymentForCurrentMonth(
   cardId: string,
@@ -107,8 +113,11 @@ export function computePaymentForCurrentMonth(
       const monthsSinceStart =
         (year - start.getUTCFullYear()) * 12 + (month - (start.getUTCMonth() + 1));
       if (monthsSinceStart < 1 || monthsSinceStart > tx.msiMonths) continue;
-      const monthly = Math.ceil((tx.amount / tx.msiMonths) * 100) / 100;
-      total += monthly;
+      total += getMsiInstallmentAmount(
+        tx.amount,
+        tx.msiMonths as MsiTenure,
+        monthsSinceStart,
+      );
     }
   }
 
