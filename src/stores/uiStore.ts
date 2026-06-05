@@ -10,6 +10,8 @@
  *   - theme: 'light' | 'dark' | 'system'. Persisted.
  *   - currentMonth: the "YYYY-MM" month being displayed. Persisted so a
  *     user navigating away and back returns to the same period.
+ *   - installPromptDismissed: whether the user has dismissed the PWA
+ *     install prompt. Persisted so we don't pester them again.
  *
  * Modals are NOT persisted (always starts closed on reload).
  */
@@ -23,12 +25,14 @@ export interface UiState {
   activeModal: string | null;
   theme: Theme;
   currentMonth: string;
+  installPromptDismissed: boolean;
 
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
   setActiveModal: (id: string | null) => void;
   setTheme: (theme: Theme) => void;
   setCurrentMonth: (month: string) => void;
+  setInstallPromptDismissed: (dismissed: boolean) => void;
 }
 
 const currentMonthNow = (): string => {
@@ -43,12 +47,14 @@ export const useUiStore = create<UiState>()(
       activeModal: null,
       theme: "system",
       currentMonth: currentMonthNow(),
+      installPromptDismissed: false,
 
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       setActiveModal: (id) => set({ activeModal: id }),
       setTheme: (theme) => set({ theme }),
       setCurrentMonth: (month) => set({ currentMonth: month }),
+      setInstallPromptDismissed: (dismissed) => set({ installPromptDismissed: dismissed }),
     }),
     {
       name: "control-ingresos-ui",
@@ -58,6 +64,7 @@ export const useUiStore = create<UiState>()(
         sidebarOpen: state.sidebarOpen,
         theme: state.theme,
         currentMonth: state.currentMonth,
+        installPromptDismissed: state.installPromptDismissed,
       }),
     },
   ),
