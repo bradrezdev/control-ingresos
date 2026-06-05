@@ -76,5 +76,17 @@ export default defineConfig({
   build: {
     target: "es2022",
     sourcemap: true,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          "react-vendor": ["react", "react-dom", "react-router"],
+          "form-vendor": ["react-hook-form", "@hookform/resolvers"],
+          "chart-vendor": ["chart.js", "react-chartjs-2"],
+          "motion-vendor": ["motion"],
+          "table-vendor": ["@tanstack/react-table"],
+          "date-vendor": ["date-fns"],
+        },
+      },
+    },
   },
 });
