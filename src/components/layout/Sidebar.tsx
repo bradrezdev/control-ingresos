@@ -8,6 +8,7 @@ import {
   Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { ThemeToggle } from "@/components/ui/ThemeToggle";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
@@ -74,6 +75,13 @@ function Sidebar(): React.JSX.Element {
           </NavLink>
         ))}
       </nav>
+
+      <div className="mt-auto px-3 pt-6 flex flex-col gap-2">
+        <span className="text-[10px] uppercase tracking-wide text-[var(--color-text-muted)] font-semibold">
+          Tema
+        </span>
+        <ThemeToggle size="sm" />
+      </div>
     </aside>
   );
 }
