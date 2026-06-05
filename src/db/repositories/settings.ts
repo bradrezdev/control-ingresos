@@ -31,7 +31,7 @@ export const settingsRepo = {
     return db.settings.get(SETTINGS_SINGLETON_ID);
   },
 
-  async update(patch: SettingsInput): Promise<Settings> {
+  async update(patch: Partial<SettingsInput>): Promise<Settings> {
     const existing = await this.getOrCreate();
     const updated: Settings = {
       ...existing,
