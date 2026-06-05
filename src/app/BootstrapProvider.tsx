@@ -50,6 +50,7 @@ export function BootstrapProvider({
 }: BootstrapProviderProps): React.JSX.Element {
   const loading = useSettingsStore((s) => s.loading);
   const refresh = useSettingsStore((s) => s.refresh);
+  const theme = useUiStore((s) => s.theme);
 
   useEffect(() => {
     let cancelled = false;
@@ -78,6 +79,14 @@ export function BootstrapProvider({
       cancelled = true;
     };
   }, [refresh]);
+
+  // Apply `data-theme` to <html> so CSS tokens flip on user choice.
+  // The CSS in src/styles/index.css scopes per :root[data-theme="..."],
+  // with "system" relying on `prefers-color-scheme`.
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    document.documentElement.setAttribute("data-theme", theme);
+  }, [theme]);
 
   if (loading) {
     return <Splash />;
