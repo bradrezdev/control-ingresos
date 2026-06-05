@@ -16,6 +16,7 @@ export interface DebtsState {
   create: (input: DebtInput) => Promise<Debt>;
   update: (id: string, patch: Partial<Debt>) => Promise<Debt>;
   remove: (id: string) => Promise<void>;
+  recordPayment: (id: string, amount: number) => Promise<Debt>;
 }
 
 export const useDebtsStore = create<DebtsState>((set) => ({
@@ -42,5 +43,11 @@ export const useDebtsStore = create<DebtsState>((set) => ({
   remove: async (id) => {
     await debtsRepo.delete(id);
     set((s) => ({ debts: s.debts.filter((d) => d.id !== id) }));
+  },
+
+  recordPayment: async (id, amount) => {
+    const debt = await debtsRepo.recordPayment(id, amount);
+    set((s) => ({ debts: s.debts.map((d) => (d.id === id ? debt : d)) }));
+    return debt;
   },
 }));
