@@ -32,10 +32,14 @@ import { centsToDisplay } from "@/lib/money/format";
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 export function MsiSummary(): React.JSX.Element {
+  // RULES OF HOOKS: every hook must be called unconditionally at the top of
+  // the component, BEFORE any early return. The order and count of hooks must
+  // be identical across renders. Adding a hook after an early return will
+  // throw "Rendered more hooks than during the previous render" once the
+  // first render hits the early return and the second one does not.
   const transactions = useLiveTransactions();
   const settings = useLiveSettings();
   const today = useMemo(() => new Date(), []);
-
   const summary = useMemo(
     () => (transactions ? summarizeMsiByTenure(transactions, today) : null),
     [transactions, today],
