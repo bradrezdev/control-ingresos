@@ -18,3 +18,5 @@ export { Drawer } from "./Drawer";
 export type { DrawerProps } from "./Drawer";
 export { GlassCard } from "./GlassCard";
 export type { GlassCardProps } from "./GlassCard";
+export { ThemeToggle } from "./ThemeToggle";
+export type { ThemeToggleProps } from "./ThemeToggle";
