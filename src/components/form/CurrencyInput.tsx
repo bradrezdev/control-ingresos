@@ -10,7 +10,7 @@
  * (e.g. "1,2" → "1.2" mid-typing) without losing characters. Parsing
  * happens on blur via the lib/money/format utilities.
  */
-import { useState, useEffect, type ChangeEvent } from "react";
+import { useState, useEffect, useRef, type ChangeEvent } from "react";
 import { Input } from "@/components/ui/Input";
 import {
   parseCurrencyInput,
@@ -46,10 +46,13 @@ export function CurrencyInput({
   "aria-labelledby": ariaLabelledBy,
 }: CurrencyInputProps): React.JSX.Element {
   const [display, setDisplay] = useState<string>(formatValueForInput(value));
+  const isEditing = useRef(false);
 
   // Sync external value -> display (when not actively editing).
   useEffect(() => {
-    setDisplay(formatValueForInput(value));
+    if (!isEditing.current) {
+      setDisplay(formatValueForInput(value));
+    }
   }, [value]);
 
   function onChange(e: ChangeEvent<HTMLInputElement>): void {
@@ -60,10 +63,14 @@ export function CurrencyInput({
   }
 
   function onBlur(): void {
-    // Re-format to canonical display on blur.
+    isEditing.current = false;
     const cents = parseCurrencyInput(display);
     onChangeCents(cents);
     setDisplay(centsToDisplayString(cents));
+  }
+
+  function onFocus(): void {
+    isEditing.current = true;
   }
 
   return (
@@ -73,6 +80,7 @@ export function CurrencyInput({
       value={display}
       onChange={onChange}
       onBlur={onBlur}
+      onFocus={onFocus}
       placeholder={placeholder}
       disabled={disabled}
       invalid={invalid}
@@ -91,13 +99,7 @@ export function CurrencyInput({
 
 function formatValueForInput(cents: number): string {
   if (!cents) return "";
-  // Display with thousands separator and 2 decimals so the user sees
-  // a familiar formatted value, but we don't include the currency symbol
-  // (the addon takes care of that).
-  return (cents / 100).toLocaleString("es-MX", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
+  return (cents / 100).toFixed(2);
 }
 
 function centsToDisplayString(cents: number): string {
