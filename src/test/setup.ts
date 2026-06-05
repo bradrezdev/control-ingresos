@@ -12,7 +12,7 @@ import { cleanup } from "@testing-library/react";
  * `beforeEach`.
  */
 function createMemoryStorage(): Storage {
-  let store = new Map<string, string>();
+  const store = new Map<string, string>();
   return {
     get length() {
       return store.size;

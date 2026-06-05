@@ -30,6 +30,7 @@ import { fadeIn } from "@/components/motion/variants";
 import { useLiveSettings } from "@/hooks/useLiveSettings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { centsToDisplay } from "@/lib/money/format";
+import { BackupSection } from "@/features/backup";
 
 const CURRENCY_OPTIONS: Array<{ value: string; label: string }> = [
   { value: "MXN", label: "MXN — Peso mexicano" },
@@ -234,6 +235,8 @@ export function Settings(): React.JSX.Element {
             </div>
           </form>
         </GlassCard>
+
+        <BackupSection />
       </div>
     </PageContainer>
   );
