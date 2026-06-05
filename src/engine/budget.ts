@@ -63,10 +63,10 @@ export function computeMonthlySpending(
 }
 
 /**
- * Determina el estado del presupuesto según porcentaje de uso:
- *   safe    → < 60%
- *   warning → 60-80%
- *   danger  → > 80%
+ * Determina el estado del presupuesto según porcentaje de uso (per spec):
+ *   safe    → < 80%
+ *   warning → 80%–99%  (advertencia explícita al usuario al llegar al 80%)
+ *   danger  → ≥ 100%   (excedió el límite)
  *
  * Si el límite es 0 (no configurado), se devuelve percent=0 y status='safe'.
  */
@@ -79,8 +79,8 @@ export function computeBudgetStatus(
   }
   const percent = (spending / monthlyLimit) * 100;
   let status: BudgetStatus;
-  if (percent < 60) status = 'safe';
-  else if (percent <= 80) status = 'warning';
+  if (percent < 80) status = 'safe';
+  else if (percent < 100) status = 'warning';
   else status = 'danger';
   return { percent, status };
 }

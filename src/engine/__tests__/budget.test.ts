@@ -70,19 +70,36 @@ describe('computeMonthlySpending', () => {
 });
 
 describe('computeBudgetStatus', () => {
-  it('safe cuando el uso es < 60%', () => {
+  it('safe cuando el uso es < 80%', () => {
     const status = computeBudgetStatus(500, 1000);
     expect(status.percent).toBe(50);
     expect(status.status).toBe('safe');
   });
 
-  it('warning cuando el uso está entre 60% y 80%', () => {
-    expect(computeBudgetStatus(700, 1000).status).toBe('warning');
+  it('safe cuando el uso es 79% (justo debajo del umbral de warning)', () => {
+    expect(computeBudgetStatus(790, 1000).status).toBe('safe');
+  });
+
+  it('warning cuando el uso es 80% (umbral explícito per spec del usuario)', () => {
     expect(computeBudgetStatus(800, 1000).status).toBe('warning');
   });
 
-  it('danger cuando el uso es > 80%', () => {
-    expect(computeBudgetStatus(810, 1000).status).toBe('danger');
+  it('warning cuando el uso está entre 80% y 99%', () => {
+    expect(computeBudgetStatus(850, 1000).status).toBe('warning');
+    expect(computeBudgetStatus(999, 1000).status).toBe('warning');
+  });
+
+  it('warning cuando el uso es exactamente 99% (justo debajo del 100%)', () => {
+    // 990 / 1000 = 99 → todavía warning, no danger
+    expect(computeBudgetStatus(990, 1000).status).toBe('warning');
+  });
+
+  it('danger cuando el uso es 100% (exacto)', () => {
+    expect(computeBudgetStatus(1000, 1000).status).toBe('danger');
+  });
+
+  it('danger cuando el uso es > 100% (excedió el límite)', () => {
+    expect(computeBudgetStatus(1100, 1000).status).toBe('danger');
     expect(computeBudgetStatus(1500, 1000).status).toBe('danger');
   });
 
