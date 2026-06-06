@@ -11,7 +11,7 @@
  *
  * UI:
  *   - GlassCard with title
- *   - Best card: large bank + last4, "tenés X días para pagar"
+ *   - Best card: large bank name, plus the days you have to pay
  *   - Alert banner if another card cuts in ≤2 days
  *   - EmptyState if no cards
  */
