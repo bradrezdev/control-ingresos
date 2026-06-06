@@ -17,6 +17,7 @@ function makeCard(overrides: Partial<Card> = {}): Card {
     id: '11111111-1111-4111-8111-111111111111',
     bank: 'BBVA',
     holderName: 'Bryan N',
+    cardType: 'credit',
     cutDay: 15,
     daysToPayAfterCut: 20,
     priority: 0,

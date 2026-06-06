@@ -24,7 +24,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { useLiveTransactions } from "@/hooks/useLiveTransactions";
 import { useLiveSettings } from "@/hooks/useLiveSettings";
-import { summarizeMsiByTenure } from "@/engine/debt";
+import { summarizeMsiByTenure } from "@/engine/msiSummary";
 import { MSI_TERM } from "@/db/schemas/transaction";
 import { formatCurrency } from "@/lib/money/format";
 import { centsToDisplay } from "@/lib/money/format";

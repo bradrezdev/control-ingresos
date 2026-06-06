@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summarizeMsiByTenure } from '../debt';
+import { summarizeMsiByTenure } from '../msiSummary';
 import type { MsiExpense } from '@/db/schemas/transaction';
 
 const today = new Date('2026-06-04T12:00:00Z');

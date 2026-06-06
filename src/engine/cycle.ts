@@ -67,11 +67,17 @@ function addMonths(year: number, month: number, n: number): { year: number; mont
  * mes previo (cutDay=31 + mes de 30 días → corte cae en el mes -2).
  */
 function previousCutDate(card: Card, today: Date): Date {
+  if (card.cardType === "debit") {
+    throw new Error(
+      "previousCutDate no aplica a tarjetas de débito (no tienen ciclo de corte/pago)",
+    );
+  }
+  const cutDay = card.cutDay as number;
   const y = today.getUTCFullYear();
   const m = today.getUTCMonth() + 1;
   for (let offset = 0; offset <= 2; offset += 1) {
     const candidate = addMonths(y, m, -offset);
-    const clamped = clampDay(card.cutDay, candidate.year, candidate.month);
+    const clamped = clampDay(cutDay, candidate.year, candidate.month);
     const dt = utcDate(candidate.year, candidate.month, clamped);
     if (dt.getTime() < today.getTime()) return dt;
   }
@@ -83,8 +89,22 @@ function previousCutDate(card: Card, today: Date): Date {
  *   - `cutDate` = próxima ocurrencia de `cutDay` >= hoy
  *   - `paymentDate` = cutDate + `daysToPayAfterCut` días
  *   - `cycleLengthDays` === `daysToPayAfterCut` (constante por tarjeta)
+ *
+ * Tarjetas de débito no tienen ciclo de corte/pago: este motor es
+ * relevante sólo para tarjetas de crédito. El caller debe filtrar las
+ * tarjetas de débito antes de invocar.
  */
 export function computeCutCycle(card: Card, today: Date): CutCycleInfo {
+  if (card.cardType === "debit") {
+    throw new Error(
+      "computeCutCycle no aplica a tarjetas de débito (no tienen ciclo de corte/pago)",
+    );
+  }
+  // A partir de acá asumimos credit. Zod valida estos campos como requeridos
+  // para credit en el superRefine, así que los `!` son seguros.
+  const cutDay = card.cutDay as number;
+  const daysToPayAfterCut = card.daysToPayAfterCut as number;
+
   const todayUtc = utcDate(
     today.getUTCFullYear(),
     today.getUTCMonth() + 1,
@@ -95,20 +115,20 @@ export function computeCutCycle(card: Card, today: Date): CutCycleInfo {
   const m = todayUtc.getUTCMonth() + 1;
   const d = todayUtc.getUTCDate();
 
-  const baseYear = d >= card.cutDay ? addMonths(y, m, 1).year : y;
-  const baseMonth = d >= card.cutDay ? addMonths(y, m, 1).month : m;
+  const baseYear = d >= cutDay ? addMonths(y, m, 1).year : y;
+  const baseMonth = d >= cutDay ? addMonths(y, m, 1).month : m;
 
-  const clampedCut = clampDay(card.cutDay, baseYear, baseMonth);
+  const clampedCut = clampDay(cutDay, baseYear, baseMonth);
   const cutDate = utcDate(baseYear, baseMonth, clampedCut);
 
   // paymentDate = cutDate + daysToPayAfterCut días, sin addMonths y sin
   // lógica de día-del-mes. JS Date.setUTCDate hace el overflow correctamente.
   const paymentDate = new Date(cutDate);
-  paymentDate.setUTCDate(paymentDate.getUTCDate() + card.daysToPayAfterCut);
+  paymentDate.setUTCDate(paymentDate.getUTCDate() + daysToPayAfterCut);
 
   const daysUntilCut = diffDays(todayUtc, cutDate);
   const daysUntilPayment = diffDays(todayUtc, paymentDate);
-  const cycleLengthDays = card.daysToPayAfterCut;
+  const cycleLengthDays = daysToPayAfterCut;
 
   return {
     daysUntilCut,
@@ -131,10 +151,12 @@ export function computeBestCardToUseToday(
   cards: Card[],
   today: Date,
 ): BestCardResult | null {
-  if (cards.length === 0) return null;
+  // Filtramos débito: no tienen ciclo, no entran al "comprar hoy" inteligente.
+  const creditCards = cards.filter((c) => c.cardType !== "debit");
+  if (creditCards.length === 0) return null;
 
   let best: { card: Card; cycle: number; priority: number } | null = null;
-  for (const card of cards) {
+  for (const card of creditCards) {
     const cycle = computeCutCycle(card, today);
     const priority = card.priority;
     if (
@@ -198,8 +220,10 @@ export function findUpcomingConvenientCut(
   today: Date,
   withinDays: number = 2,
 ): UpcomingCut | null {
+  // Filtramos débito: no tienen corte, no son candidatas a "comprar antes del corte".
+  const creditCards = cards.filter((c) => c.cardType !== "debit");
   let soonest: UpcomingCut | null = null;
-  for (const card of cards) {
+  for (const card of creditCards) {
     const cycle = computeCutCycle(card, today);
     if (cycle.daysUntilCut > withinDays) continue;
     if (soonest === null || cycle.daysUntilCut < soonest.daysUntilCut) {
