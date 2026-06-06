@@ -35,11 +35,11 @@ const cardFormSchema = z.object({
     .int("Debe ser entero")
     .min(1, "Mínimo 1")
     .max(31, "Máximo 31"),
-  paymentDueDay: z
-    .number({ error: "Ingresá un día entre 1 y 31" })
+  daysToPayAfterCut: z
+    .number({ error: "Ingresá un valor entre 1 y 62" })
     .int("Debe ser entero")
     .min(1, "Mínimo 1")
-    .max(31, "Máximo 31"),
+    .max(62, "Máximo 62"),
   // Optional credit limit in display units. `undefined` = no limit.
   creditLimit: z
     .number()
@@ -100,9 +100,8 @@ export function CardForm({
     const input: CardInput = {
       bank: values.bank.trim(),
       holderName: values.holderName.trim(),
-      last4: card?.last4 ?? "",
       cutDay: values.cutDay,
-      paymentDueDay: values.paymentDueDay,
+      daysToPayAfterCut: values.daysToPayAfterCut,
       // New cards start at priority 0; on edit, preserve current.
       priority: card?.priority ?? 0,
       ...(typeof values.creditLimit === "number"
@@ -191,22 +190,22 @@ export function CardForm({
         </div>
         <div className="flex flex-col gap-1.5">
           <label
-            htmlFor="card-dueday"
+            htmlFor="card-days-to-pay"
             className="text-sm font-medium text-[var(--color-text-body)]"
           >
-            Día de pago
+            Días después del corte para pagar
           </label>
           <Input
-            id="card-dueday"
+            id="card-days-to-pay"
             type="number"
             min={1}
-            max={31}
-            invalid={!!errors.paymentDueDay}
-            {...register("paymentDueDay", { valueAsNumber: true })}
+            max={62}
+            invalid={!!errors.daysToPayAfterCut}
+            {...register("daysToPayAfterCut", { valueAsNumber: true })}
           />
-          {errors.paymentDueDay ? (
+          {errors.daysToPayAfterCut ? (
             <p role="alert" className="text-xs text-[var(--color-danger)]">
-              {errors.paymentDueDay.message}
+              {errors.daysToPayAfterCut.message}
             </p>
           ) : null}
         </div>
@@ -262,15 +261,15 @@ function cardToFormValues(card: Card | undefined): CardFormValues {
       bank: "",
       holderName: "",
       cutDay: 1,
-      paymentDueDay: 15,
+      daysToPayAfterCut: 15,
       creditLimit: undefined,
     };
   }
   return {
     bank: card.bank,
-      holderName: card.holderName,
-      cutDay: card.cutDay,
-    paymentDueDay: card.paymentDueDay,
+    holderName: card.holderName,
+    cutDay: card.cutDay,
+    daysToPayAfterCut: card.daysToPayAfterCut,
     creditLimit: card.creditLimit,
   };
 }

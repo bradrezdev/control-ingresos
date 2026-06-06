@@ -75,7 +75,6 @@ export function CardListItem({
             <h3 className="text-base font-semibold tracking-tight text-[var(--color-text-primary)]">
               {card.bank}
             </h3>
-            <Badge variant="primary">**** {card.last4}</Badge>
             <Badge variant="default" className="hidden sm:inline-flex">
               Prioridad {card.priority + 1}
             </Badge>
@@ -84,7 +83,7 @@ export function CardListItem({
             {card.holderName}
           </p>
           <p className="mt-0.5 text-xs text-[var(--color-text-muted)]">
-            Corte día {card.cutDay} · Pago día {card.paymentDueDay}
+            Corte día {card.cutDay} · {card.daysToPayAfterCut} días para pagar
             {card.creditLimit
               ? ` · Límite ${card.creditLimit.toLocaleString("es-MX")}`
               : null}

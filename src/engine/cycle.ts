@@ -1,4 +1,18 @@
 import type { Card } from '@/db/schemas/card';
+import { subMonths } from 'date-fns';
+
+const MONTHS_ES = [
+  'enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio',
+  'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre',
+] as const;
+
+/** "5 de julio" — interprets the date in UTC (not local TZ) to keep
+ *  the user's mental model stable across timezones. */
+function formatSpanishDateUtc(d: Date): string {
+  const day = d.getUTCDate();
+  const month = MONTHS_ES[d.getUTCMonth()] ?? '';
+  return `${day} de ${month}`;
+}
 
 export interface CutCycleInfo {
   daysUntilCut: number;
@@ -21,7 +35,6 @@ export interface UpcomingCut {
 
 /** Devuelve los días del mes `year/month` (1-31), respetando bisiestos. */
 function daysInMonth(year: number, month: number): number {
-  // month es 1-12
   return new Date(Date.UTC(year, month, 0)).getUTCDate();
 }
 
@@ -49,10 +62,27 @@ function addMonths(year: number, month: number, n: number): { year: number; mont
 }
 
 /**
- * Calcula el próximo ciclo de corte y pago de una tarjeta.
+ * Última fecha de corte que ocurrió estrictamente ANTES de `today`. Itera
+ * hasta 3 meses hacia atrás para cubrir tarjetas con cutDay tardío en el
+ * mes previo (cutDay=31 + mes de 30 días → corte cae en el mes -2).
+ */
+function previousCutDate(card: Card, today: Date): Date {
+  const y = today.getUTCFullYear();
+  const m = today.getUTCMonth() + 1;
+  for (let offset = 0; offset <= 2; offset += 1) {
+    const candidate = addMonths(y, m, -offset);
+    const clamped = clampDay(card.cutDay, candidate.year, candidate.month);
+    const dt = utcDate(candidate.year, candidate.month, clamped);
+    if (dt.getTime() < today.getTime()) return dt;
+  }
+  return utcDate(y, m, 1);
+}
+
+/**
+ * Calcula el próximo ciclo de corte y pago de una tarjeta (modelo v2):
  *   - `cutDate` = próxima ocurrencia de `cutDay` >= hoy
- *   - `paymentDate` = primera ocurrencia de `paymentDueDay` >= cutDate
- *   - `cycleLengthDays` = días entre cutDate y paymentDate
+ *   - `paymentDate` = cutDate + `daysToPayAfterCut` días
+ *   - `cycleLengthDays` === `daysToPayAfterCut` (constante por tarjeta)
  */
 export function computeCutCycle(card: Card, today: Date): CutCycleInfo {
   const todayUtc = utcDate(
@@ -65,29 +95,20 @@ export function computeCutCycle(card: Card, today: Date): CutCycleInfo {
   const m = todayUtc.getUTCMonth() + 1;
   const d = todayUtc.getUTCDate();
 
-  // Si el día actual >= cutDay, el próximo corte es el mes siguiente.
   const baseYear = d >= card.cutDay ? addMonths(y, m, 1).year : y;
   const baseMonth = d >= card.cutDay ? addMonths(y, m, 1).month : m;
 
   const clampedCut = clampDay(card.cutDay, baseYear, baseMonth);
   const cutDate = utcDate(baseYear, baseMonth, clampedCut);
 
-  // Payment due: primer día >= cutDate que coincida con paymentDueDay.
-  let payYear = baseYear;
-  let payMonth = baseMonth;
-  let clampedPay = clampDay(card.paymentDueDay, payYear, payMonth);
-  let paymentDate = utcDate(payYear, payMonth, clampedPay);
-  if (paymentDate.getTime() < cutDate.getTime()) {
-    const next = addMonths(payYear, payMonth, 1);
-    payYear = next.year;
-    payMonth = next.month;
-    clampedPay = clampDay(card.paymentDueDay, payYear, payMonth);
-    paymentDate = utcDate(payYear, payMonth, clampedPay);
-  }
+  // paymentDate = cutDate + daysToPayAfterCut días, sin addMonths y sin
+  // lógica de día-del-mes. JS Date.setUTCDate hace el overflow correctamente.
+  const paymentDate = new Date(cutDate);
+  paymentDate.setUTCDate(paymentDate.getUTCDate() + card.daysToPayAfterCut);
 
   const daysUntilCut = diffDays(todayUtc, cutDate);
   const daysUntilPayment = diffDays(todayUtc, paymentDate);
-  const cycleLengthDays = diffDays(cutDate, paymentDate);
+  const cycleLengthDays = card.daysToPayAfterCut;
 
   return {
     daysUntilCut,
@@ -102,6 +123,9 @@ export function computeCutCycle(card: Card, today: Date): CutCycleInfo {
  * Devuelve la tarjeta con el ciclo de financiamiento más largo (mejor para
  * comprar hoy). Si hay empate, gana la de mayor `priority` numérico. Si no hay
  * tarjetas, devuelve null.
+ *
+ * El rationale es HONESTO: refleja los días reales desde el último corte
+ * y la fecha exacta del próximo pago. No es un string fijo.
  */
 export function computeBestCardToUseToday(
   cards: Card[],
@@ -124,13 +148,43 @@ export function computeBestCardToUseToday(
 
   if (!best) return null;
 
-  const day = best.card.cutDay.toString().padStart(2, '0');
-  const month = best.card.cutDay.toString(); // solo decorativo
-  void month;
+  // "Próximo pago" se refiere al pago asociado al PRÓXIMO corte (no al
+  // corte anterior). Si el usuario compra hoy, su compra entra en el
+  // próximo ciclo de pago, que es lo que le importa para decidir la tarjeta.
+  const cycle = computeCutCycle(best.card, today);
+  const previous = previousCutDate(best.card, today);
+  // Diff en días calendario (UTC-midnight → UTC-midnight) para evitar
+  // el drift de 12h que produce Math.round((t1 - t2) / 86_400_000).
+  const todayMid = Date.UTC(
+    today.getUTCFullYear(),
+    today.getUTCMonth(),
+    today.getUTCDate(),
+  );
+  const previousMid = Date.UTC(
+    previous.getUTCFullYear(),
+    previous.getUTCMonth(),
+    previous.getUTCDate(),
+  );
+  const daysSinceLastCut = Math.max(
+    0,
+    Math.round((todayMid - previousMid) / 86_400_000),
+  );
+  const daysUntilPayment = Math.max(0, cycle.daysUntilPayment);
+  const daysLabel = daysSinceLastCut === 1 ? 'día' : 'días';
+  const daysPaymentLabel = daysUntilPayment === 1 ? 'día' : 'días';
+  // Render del "próximo pago" en UTC explícito: las fechas en este
+  // dominio son date-only (no instantes), y un usuario en UTC-6 no
+  // debe ver "4 de julio" cuando el corte es el 5 jul UTC.
+  const formattedPayment = formatSpanishDateUtc(cycle.paymentDate);
+  const rationale =
+    `Tu tarjeta ${best.card.bank} cortó hace ${daysSinceLastCut} ${daysLabel}. ` +
+    `Tu próximo pago es el ${formattedPayment}. ` +
+    `Tenés ${daysUntilPayment} ${daysPaymentLabel} para pagar.`;
+
   return {
     card: best.card,
     cycleLengthDays: best.cycle,
-    rationale: `Tu tarjeta ${best.card.bank} (${best.card.last4}) cortó hace poco, tenés hasta el día ${day} para pagar (${best.cycle} días de financiamiento).`,
+    rationale,
   };
 }
 
@@ -154,3 +208,7 @@ export function findUpcomingConvenientCut(
   }
   return soonest;
 }
+
+// Mantener import vivo aunque no se use directamente (compat con tests que
+// re-importan desde este módulo y futuros consumidores).
+void subMonths;

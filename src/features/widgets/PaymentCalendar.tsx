@@ -81,9 +81,6 @@ export function PaymentCalendar(): React.JSX.Element {
             <span className="text-sm font-medium text-[var(--color-text-body)]">
               {row.original.card.bank}
             </span>
-            <span className="text-xs text-[var(--color-text-muted)] tabular-nums">
-              •••• {row.original.card.last4}
-            </span>
           </div>
         ),
       },

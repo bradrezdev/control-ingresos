@@ -97,9 +97,6 @@ export function SmartShopper(): React.JSX.Element {
           <p className="mt-1 text-2xl font-semibold tracking-tight text-[var(--color-text-primary)]">
             {card.bank}
           </p>
-          <p className="text-sm text-[var(--color-text-muted)] tabular-nums">
-            •••• {card.last4}
-          </p>
           <p className="mt-4 text-sm text-[var(--color-text-body)]">
             {rationale}
           </p>

@@ -198,7 +198,7 @@ export function TransactionsTable({
           const card = cardById.get(tx.cardId);
           return (
             <span className="text-sm text-[var(--color-text-body)]">
-              {card ? `${card.bank} •••• ${card.last4}` : "—"}
+              {card ? card.bank : "—"}
             </span>
           );
         },

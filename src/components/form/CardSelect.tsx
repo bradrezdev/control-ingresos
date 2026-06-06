@@ -32,7 +32,7 @@ export function CardSelect({
 
   const options: SelectOption[] = (cards ?? []).map((c) => ({
     value: c.id,
-    label: `${c.bank} •••• ${c.last4}`,
+    label: c.bank,
   }));
 
   return (

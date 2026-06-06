@@ -4,6 +4,9 @@
  * Covers: invalid JSON, schema validation, version mismatch,
  * round-trip (export → import → re-export equality), and the
  * replace vs merge modes.
+ *
+ * Card fixtures use the v2 shape (daysToPayAfterCut, no last4, no
+ * paymentDueDay) per BACKUP_VERSION=2.
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import { db } from "@/db/database";
@@ -35,14 +38,13 @@ function makeFile(payload: unknown): File {
   return new File([json], "backup.json", { type: "application/json" });
 }
 
-function seedCard(id: string, last4 = "1234") {
+function seedCard(id: string) {
   return db.cards.add({
     id,
     bank: "BBVA",
     holderName: "Seed",
-    last4,
     cutDay: 15,
-    paymentDueDay: 5,
+    daysToPayAfterCut: 20,
     priority: 0,
     createdAt: NOW.toISOString(),
     updatedAt: NOW.toISOString(),
@@ -91,7 +93,7 @@ describe("importBackup — replace mode", () => {
 
   it("clears existing data and writes the backup", async () => {
     const seededId = crypto.randomUUID();
-    await seedCard(seededId, "9999");
+    await seedCard(seededId);
     expect(await db.cards.count()).toBe(1);
 
     const replacementId = crypto.randomUUID();
@@ -106,9 +108,8 @@ describe("importBackup — replace mode", () => {
             id: replacementId,
             bank: "Santander",
             holderName: "New",
-            last4: "1111",
             cutDay: 10,
-            paymentDueDay: 1,
+            daysToPayAfterCut: 25,
             priority: 0,
             createdAt: NOW.toISOString(),
             updatedAt: NOW.toISOString(),
@@ -136,7 +137,7 @@ describe("importBackup — merge mode", () => {
 
   it("upserts by id, backup wins on conflict", async () => {
     const sharedId = crypto.randomUUID();
-    await seedCard(sharedId, "0000");
+    await seedCard(sharedId);
 
     const newId = crypto.randomUUID();
     const payload = {
@@ -150,9 +151,8 @@ describe("importBackup — merge mode", () => {
             id: sharedId,
             bank: "Santander",
             holderName: "Updated",
-            last4: "2222",
             cutDay: 1,
-            paymentDueDay: 1,
+            daysToPayAfterCut: 1,
             priority: 0,
             createdAt: NOW.toISOString(),
             updatedAt: NOW.toISOString(),
@@ -161,9 +161,8 @@ describe("importBackup — merge mode", () => {
             id: newId,
             bank: "Banamex",
             holderName: "Added",
-            last4: "3333",
             cutDay: 1,
-            paymentDueDay: 1,
+            daysToPayAfterCut: 1,
             priority: 0,
             createdAt: NOW.toISOString(),
             updatedAt: NOW.toISOString(),
@@ -179,7 +178,6 @@ describe("importBackup — merge mode", () => {
     expect(result.updated).toBe(1);
 
     const updated = await db.cards.get(sharedId);
-    expect(updated?.last4).toBe("2222");
     expect(updated?.bank).toBe("Santander");
     const added = await db.cards.get(newId);
     expect(added?.holderName).toBe("Added");
@@ -187,7 +185,7 @@ describe("importBackup — merge mode", () => {
 
   it("keeps unrelated existing records", async () => {
     const existingId = crypto.randomUUID();
-    await seedCard(existingId, "7777");
+    await seedCard(existingId);
 
     const payload = {
       version: BACKUP_VERSION,
@@ -200,9 +198,8 @@ describe("importBackup — merge mode", () => {
             id: crypto.randomUUID(),
             bank: "HSBC",
             holderName: "New",
-            last4: "5555",
             cutDay: 20,
-            paymentDueDay: 10,
+            daysToPayAfterCut: 10,
             priority: 0,
             createdAt: NOW.toISOString(),
             updatedAt: NOW.toISOString(),
@@ -214,7 +211,7 @@ describe("importBackup — merge mode", () => {
 
     await importBackup(payload, "merge");
     const existing = await db.cards.get(existingId);
-    expect(existing?.last4).toBe("7777");
+    expect(existing?.bank).toBe("BBVA");
     expect(await db.cards.count()).toBe(2);
   });
 });
@@ -225,14 +222,14 @@ describe("round-trip — export → import → export equality", () => {
   });
 
   it("preserves the dataset across replace import", async () => {
-    await seedCard(crypto.randomUUID(), "1234");
+    await seedCard(crypto.randomUUID());
     await db.transactions.add({
       id: crypto.randomUUID(),
       type: "income",
       amount: 100,
       currency: "MXN",
       description: "Trip",
-      date: NOW.toISOString(),
+      date: "2026-06-05T00:00:00.000Z",
       paymentMethod: "cash",
     });
 
