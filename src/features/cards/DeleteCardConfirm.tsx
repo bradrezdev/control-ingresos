@@ -43,7 +43,7 @@ export function DeleteCardConfirm({
       size="sm"
       {...(card
         ? {
-            description: `¿Eliminar la tarjeta de ${card.bank} (**** ${card.last4})? Esta acción no se puede deshacer.`,
+            description: `¿Eliminar la tarjeta de ${card.bank}? Esta acción no se puede deshacer.`,
           }
         : {})}
     >

@@ -21,7 +21,7 @@ import { DebtSchema } from "@/db/schemas/debt";
 import { SettingsSchema } from "@/db/schemas/settings";
 import { TransactionSchema } from "@/db/schemas/transaction";
 
-export const BACKUP_VERSION = 1 as const;
+export const BACKUP_VERSION = 2 as const;
 export const APP_NAME = "control-ingresos" as const;
 
 export const BackupDataSchema = z.object({
