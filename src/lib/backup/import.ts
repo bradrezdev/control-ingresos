@@ -20,6 +20,7 @@ import {
   BackupPayloadSchema,
   type BackupPayload,
 } from "./schema";
+import { normalizeToDateString } from "@/lib/date/local";
 
 export type ImportMode = "replace" | "merge";
 
@@ -95,14 +96,41 @@ export async function parseBackupFile(file: File | Blob): Promise<BackupPayload>
 /**
  * Apply a previously-parsed payload to Dexie. Runs inside a single
  * transaction so partial writes never persist on error.
+ *
+ * Antes de pasar el payload al Zod parse, normalizamos los dates de las
+ * transacciones y deudas: filas exportadas por una versión vieja del app
+ * (date en formato `...T00:00:00.000Z`) se acortan a date-only
+ * "YYYY-MM-DD" para que Zod 4 (con `z.iso.date()`) las acepte.
  */
+function normalizePayloadDates(payload: BackupPayload): BackupPayload {
+  return {
+    ...payload,
+    data: {
+      ...payload.data,
+      transactions: payload.data.transactions.map((tx) => ({
+        ...tx,
+        date: normalizeToDateString(tx.date),
+        ...(tx.type === "expense_msi"
+          ? { msiStartDate: normalizeToDateString(tx.msiStartDate) }
+          : {}),
+      })),
+      debts: payload.data.debts.map((d) => ({
+        ...d,
+        startDate: normalizeToDateString(d.startDate),
+        ...(d.endDate ? { endDate: normalizeToDateString(d.endDate) } : {}),
+      })),
+    },
+  };
+}
+
 export async function importBackup(
   payload: BackupPayload,
   mode: ImportMode,
 ): Promise<ImportResult> {
   // Re-validate as a safety net (callers should already have validated
   // via parseBackupFile, but importBackup may be invoked programmatically).
-  const validated = BackupPayloadSchema.parse(payload);
+  const normalized = normalizePayloadDates(payload);
+  const validated = BackupPayloadSchema.parse(normalized);
   await db.open();
 
   const total =

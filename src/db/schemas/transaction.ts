@@ -23,7 +23,9 @@ const BaseTransaction = z.object({
   amount: z.number().positive(),
   currency: z.string().length(3),
   description: z.string().min(1).max(120),
-  date: z.iso.datetime(),
+  // R-4 (bug 4): date-only storage (YYYY-MM-DD) para evitar el drift por
+  // zona horaria. Helpers de boundary en `src/lib/date/local.ts`.
+  date: z.iso.date(),
   category: z.string().optional(),
 });
 
@@ -49,7 +51,7 @@ export const MsiExpenseSchema = BaseTransaction.extend({
   paymentMethod: z.literal('credit'),
   cardId: z.uuid(),
   msiMonths: MsiMonths,
-  msiStartDate: z.iso.datetime(),
+  msiStartDate: z.iso.date(),
 });
 
 export const TransactionSchema = z.discriminatedUnion('type', [

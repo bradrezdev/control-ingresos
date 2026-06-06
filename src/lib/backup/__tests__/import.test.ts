@@ -229,7 +229,7 @@ describe("round-trip — export → import → export equality", () => {
       amount: 100,
       currency: "MXN",
       description: "Trip",
-      date: "2026-06-05T00:00:00.000Z",
+      date: "2026-06-05",
       paymentMethod: "cash",
     });
 

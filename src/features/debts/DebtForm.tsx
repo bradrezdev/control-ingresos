@@ -101,17 +101,18 @@ export function DebtForm({ debt, onSaved, onCancel }: DebtFormProps): React.JSX.
       onSaved();
       return;
     }
-    const startDateIso = new Date(values.startDate).toISOString();
+    // R-4 (bug 4): pasamos el string YYYY-MM-DD directo al storage.
+    const startDate = values.startDate;
     const baseInput: DebtInput = {
       creditor: values.creditor.trim(),
       originalAmount: values.originalAmount,
       remainingBalance: debt?.remainingBalance ?? values.originalAmount,
       fixedMonthlyPayment: values.fixedMonthlyPayment,
-      startDate: startDateIso,
+      startDate,
       ...(values.description && values.description.trim()
         ? { description: values.description.trim() }
         : {}),
-      ...(values.endDate ? { endDate: new Date(values.endDate).toISOString() } : {}),
+      ...(values.endDate ? { endDate: values.endDate } : {}),
     };
     if (debt) {
       await update(debt.id, baseInput);
@@ -261,7 +262,8 @@ function debtToFormValues(debt: Debt | undefined): DebtFormValues {
     description: debt.description ?? "",
     originalAmount: debt.originalAmount,
     fixedMonthlyPayment: debt.fixedMonthlyPayment,
-    startDate: toIsoDateString(new Date(debt.startDate)),
-    endDate: debt.endDate ? toIsoDateString(new Date(debt.endDate)) : undefined,
+    // R-4: `debt.startDate` ya es "YYYY-MM-DD" (date-only). Pasamos directo.
+    startDate: debt.startDate,
+    endDate: debt.endDate,
   };
 }

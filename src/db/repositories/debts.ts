@@ -1,13 +1,26 @@
 import { db } from '../database';
 import { DebtSchema, type Debt, type DebtInput } from '../schemas/debt';
+import { normalizeToDateString } from '@/lib/date/local';
+
+/** Read-through normalizer: rows legacy con `...T00:00:00.000Z` se acortan
+ *  a date-only. Filas nuevas (ya date-only) pasan sin tocarse. */
+function normalizeDateFields(debt: Debt): Debt {
+  return {
+    ...debt,
+    startDate: normalizeToDateString(debt.startDate),
+    ...(debt.endDate ? { endDate: normalizeToDateString(debt.endDate) } : {}),
+  };
+}
 
 export const debtsRepo = {
   async list(): Promise<Debt[]> {
-    return db.debts.orderBy('createdAt').toArray();
+    const all = await db.debts.orderBy('createdAt').toArray();
+    return all.map(normalizeDateFields);
   },
 
   async get(id: string): Promise<Debt | undefined> {
-    return db.debts.get(id);
+    const debt = await db.debts.get(id);
+    return debt ? normalizeDateFields(debt) : undefined;
   },
 
   async create(input: DebtInput): Promise<Debt> {

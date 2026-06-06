@@ -7,8 +7,11 @@ export const DebtSchema = z.object({
   originalAmount: z.number().positive(),
   remainingBalance: z.number().nonnegative(),
   fixedMonthlyPayment: z.number().positive(),
-  startDate: z.iso.datetime(),
-  endDate: z.iso.datetime().optional(),
+  // R-4 (bug 4): date-only para fechas operacionales (sin TZ math).
+  startDate: z.iso.date(),
+  endDate: z.iso.date().optional(),
+  // `createdAt` / `updatedAt` siguen siendo datetime (son timestamps de auditoría,
+  // no fechas que el usuario edita).
   createdAt: z.iso.datetime(),
   updatedAt: z.iso.datetime(),
 });
