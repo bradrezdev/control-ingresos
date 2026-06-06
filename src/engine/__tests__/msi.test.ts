@@ -9,11 +9,16 @@ import type { MsiExpense, Transaction } from '@/db/schemas/transaction';
 
 const today = new Date('2026-06-04T12:00:00Z');
 
+/**
+ * Engine operates in INTEGER CENTS per ADR-03. Test fixtures are scaled
+ * 100× from display: $1000 → 100000, $123.45 → 12345.
+ */
+
 function makeMsi(overrides: Partial<MsiExpense> = {}): MsiExpense {
   return {
     id: '11111111-1111-4111-8111-111111111111',
     type: 'expense_msi',
-    amount: 1200,
+    amount: 100000, // $1000.00 in cents
     currency: 'MXN',
     description: 'Laptop MSI',
     date: '2026-05-15T10:00:00.000Z',
@@ -25,24 +30,25 @@ function makeMsi(overrides: Partial<MsiExpense> = {}): MsiExpense {
   } as MsiExpense;
 }
 
-describe('getMsiMonthlyAmount', () => {
+describe('getMsiMonthlyAmount (cents contract)', () => {
   it('prorratea exactamente cuando amount es divisible', () => {
-    expect(getMsiMonthlyAmount(1200, 12)).toBe(100);
+    // $1200 a 12 meses → $100/mes → 10000 cents
+    expect(getMsiMonthlyAmount(120000, 12)).toBe(10000);
   });
 
   it('redondea hacia ABAJO al centavo (la última cuota absorbe el residuo)', () => {
-    // 1000 / 3 = 333.333... → 333.33 (la última será 333.34)
-    expect(getMsiMonthlyAmount(1000, 3)).toBe(333.33);
+    // $10 a 3 meses → 3.33 / 3.33 / 3.34 → 333 / 333 / 334 cents
+    expect(getMsiMonthlyAmount(1000, 3)).toBe(333);
   });
 
   it('maneja 18 meses', () => {
-    // 1800 / 18 = 100 exacto
-    expect(getMsiMonthlyAmount(1800, 18)).toBe(100);
+    // $1800 / 18 = $100 exacto → 10000 cents
+    expect(getMsiMonthlyAmount(180000, 18)).toBe(10000);
   });
 
   it('maneja 24 meses', () => {
-    // 2400 / 24 = 100 exacto
-    expect(getMsiMonthlyAmount(2400, 24)).toBe(100);
+    // $2400 / 24 = $100 exacto → 10000 cents
+    expect(getMsiMonthlyAmount(240000, 24)).toBe(10000);
   });
 
   it('devuelve 0 si el monto es 0', () => {
@@ -55,31 +61,31 @@ describe('getMsiMonthlyAmount', () => {
   });
 });
 
-describe('getMsiInstallmentAmount', () => {
+describe('getMsiInstallmentAmount (cents contract)', () => {
   it('devuelve la cuota regular para índices 1..N-1', () => {
-    const amount = 1000;
+    const amount = 1000; // $10
     const months = 3;
     for (let i = 1; i < months; i += 1) {
-      expect(getMsiInstallmentAmount(amount, months, i)).toBe(333.33);
+      expect(getMsiInstallmentAmount(amount, months, i)).toBe(333);
     }
   });
 
   it('la última cuota absorbe el residuo', () => {
-    // 1000 / 3 → 3 cuotas: 333.33, 333.33, 333.34
-    expect(getMsiInstallmentAmount(1000, 3, 3)).toBe(333.34);
+    // $10 / 3 → 3 cuotas: 333, 333, 334 cents
+    expect(getMsiInstallmentAmount(1000, 3, 3)).toBe(334);
   });
 
-  it('Σ de N cuotas === amount exacto (invariante del motor)', () => {
+  it('Σ de N cuotas === amount exacto (invariante del motor, en cents)', () => {
     const cases: Array<[number, 3 | 6 | 9 | 12 | 18 | 24]> = [
-      [1000, 3],
+      [100000, 3],
+      [10000, 3],
+      [99900, 6],
+      [123400, 9],
+      [120000, 12],
+      [150000, 18],
+      [240000, 24],
       [100, 3],
-      [999, 6],
-      [1234, 9],
-      [1200, 12],
-      [1500, 18],
-      [2400, 24],
-      [1, 3],
-      [99, 6],
+      [9900, 6],
     ];
     for (const [amount, months] of cases) {
       const sum = Array.from({ length: months }, (_, i) =>
@@ -90,13 +96,13 @@ describe('getMsiInstallmentAmount', () => {
   });
 
   it('Σ preserva exactitud para montos con muchos decimales', () => {
-    // Caso patológico: 10.01 / 3 → varias decimales, pero la suma debe cerrar.
-    const amount = 10.01;
+    // Caso patológico: $10.01 / 3 → varias decimales, pero la suma debe cerrar.
+    const amount = 1001;
     const months = 3;
     const sum = Array.from({ length: months }, (_, i) =>
       getMsiInstallmentAmount(amount, months, i + 1),
     ).reduce((a, b) => a + b, 0);
-    expect(Math.round(sum * 100) / 100).toBe(amount);
+    expect(sum).toBe(amount);
   });
 
   it('devuelve 0 para monthIndex fuera de rango', () => {
@@ -111,15 +117,15 @@ describe('getMsiInstallmentAmount', () => {
   });
 });
 
-describe('computeMsiSchedule', () => {
-  it('genera N entradas con la última absorbiendo el residuo (Σ === amount)', () => {
-    // amount=1000/3=333.33... → regular 333.33, última 333.34
+describe('computeMsiSchedule (cents contract)', () => {
+  it('genera N entradas con la última absorbiendo el residuo (Σ === amount, en cents)', () => {
+    // $10 / 3 → 3.33 / 3.33 / 3.34 → 333 / 333 / 334 cents
     const tx = makeMsi({ amount: 1000, msiMonths: 3, msiStartDate: '2026-05-15T10:00:00.000Z' });
     const schedule = computeMsiSchedule(tx, today);
     expect(schedule).toHaveLength(3);
-    expect(schedule[0]).toEqual({ year: 2026, month: 6, amount: 333.33 });
-    expect(schedule[1]).toEqual({ year: 2026, month: 7, amount: 333.33 });
-    expect(schedule[2]).toEqual({ year: 2026, month: 8, amount: 333.34 });
+    expect(schedule[0]).toEqual({ year: 2026, month: 6, amount: 333 });
+    expect(schedule[1]).toEqual({ year: 2026, month: 7, amount: 333 });
+    expect(schedule[2]).toEqual({ year: 2026, month: 8, amount: 334 });
     // Invariante
     const sum = schedule.reduce((acc, e) => acc + e.amount, 0);
     expect(sum).toBe(1000);
@@ -153,11 +159,11 @@ describe('computeMsiSchedule', () => {
 
   it('Σ del schedule completo === amount (invariante global, varios plazos)', () => {
     const cases: Array<[number, 3 | 6 | 9 | 12 | 18 | 24]> = [
-      [1000, 3],
-      [999, 6],
-      [1234, 9],
-      [1500, 18],
-      [7777, 24],
+      [100000, 3],
+      [99900, 6],
+      [123400, 9],
+      [150000, 18],
+      [777700, 24],
     ];
     for (const [amount, msiMonths] of cases) {
       const tx = makeMsi({ amount, msiMonths, msiStartDate: '2026-05-15T10:00:00.000Z' });
@@ -204,7 +210,7 @@ describe('getActiveMsiForCurrentMonth', () => {
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
       cardId: tx.cardId,
-      amount: 1200,
+      amount: 100000,
       monthsTotal: 12,
       monthIndex: 1,
     });

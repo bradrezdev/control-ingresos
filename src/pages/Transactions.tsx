@@ -78,7 +78,10 @@ export function Transactions(): React.JSX.Element {
   }
 
   async function onSubmitForm(values: TransactionFormValues_Output): Promise<void> {
-    const amount = Math.round(values.amount * 100);
+    // El form ya entrega `amount` en centavos enteros (ver TransactionForm
+    // línea 213: passthrough directo de onChangeCents). Multiplicar por 100
+    // aquí duplicaba el factor y rompía la persistencia.
+    const amount = values.amount;
     // The discriminated union's type system loses the cardId field on
     // narrowed variants (a quirk of `Omit<Union, K>` over Zod inferred
     // unions). Cast at the boundary — the repo's Zod parse is the

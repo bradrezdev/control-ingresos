@@ -103,6 +103,10 @@ export function MsiSummary(): React.JSX.Element {
       tooltip: {
         callbacks: {
           label: (ctx) => {
+            // `value` viene de `centsToDisplay(summary[t].totalDebt)` (línea
+            // 82). Volvemos a cents con `* 100` SOLO para el formatter, que
+            // sigue esperando cents. No hay cambio de contrato: chart está en
+            // display, tooltip se reformatea a currency-string.
             const value = Number(ctx.parsed.y);
             return formatCurrency(Math.round(value * 100), currency);
           },

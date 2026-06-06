@@ -21,29 +21,29 @@ export interface ActiveMsiForCurrentMonth {
 
 /**
  * Prorrateo SIN intereses (MSI mexicano 0% promocional).
- * Devuelve la **cuota regular** (no la última) en pesos (no centavos).
+ * Devuelve la **cuota regular** (no la última) en centavos enteros.
  *
  * La cuota regular se redondea hacia ABAJO al centavo. La última cuota del
  * calendario absorbe el residuo, garantizando el invariante:
  *
  *   (N - 1) × getMsiMonthlyAmount(amount, N) + última === amount
  *
- * Ejemplos:
- *   getMsiMonthlyAmount(1000, 3) → 333.33  (última cuota = 333.34)
- *   getMsiMonthlyAmount(1200, 12) → 100    (última cuota = 100)
- *   getMsiMonthlyAmount(0, 12)    → 0
- *   getMsiMonthlyAmount(100, 0)   → 100    (caso patológico, Zod lo bloquea)
+ * Convención de unidades (ADR-03): todos los argumentos y retornos
+ * monetarios son centavos enteros. Use `displayToCents` o `centsToDisplay`
+ * en la frontera hacia la UI.
  *
- * Use `getMsiInstallmentAmount(amount, months, monthIndex)` si necesitás el
- * monto EXACTO de una cuota específica (la última absorbe el residuo).
- * Use `computeMsiSchedule` para el calendario completo de N entradas.
+ * Ejemplos:
+ *   getMsiMonthlyAmount(100000, 3) → 33333  ($1000 / 3, regular)
+ *   getMsiMonthlyAmount(120000, 12) → 10000 ($1200 / 12, regular)
+ *   getMsiMonthlyAmount(0, 12)     → 0
+ *   getMsiMonthlyAmount(100, 0)    → 100    (caso patológico, Zod lo bloquea)
  */
-export function getMsiMonthlyAmount(amount: number, months: MsiTenure): number {
-  if (amount <= 0) return 0;
-  if (months <= 0) return amount;
-  // Floor para que la cuota regular nunca exceda amount / months.
+export function getMsiMonthlyAmount(amountCents: number, months: MsiTenure): number {
+  if (amountCents <= 0) return 0;
+  if (months <= 0) return amountCents;
+  // Floor para que la cuota regular nunca exceda amountCents / months.
   // El residuo se acumula en la última cuota.
-  return Math.floor((amount / months) * 100) / 100;
+  return Math.floor(amountCents / months);
 }
 
 /**
@@ -53,21 +53,20 @@ export function getMsiMonthlyAmount(amount: number, months: MsiTenure): number {
  *   Σ getMsiInstallmentAmount(amount, N, i) para i=1..N === amount
  *
  * Devuelve 0 si `monthIndex` está fuera del rango [1, months] o si el monto
- * es inválido.
+ * es inválido. Todos los argumentos/retornos en centavos enteros.
  */
 export function getMsiInstallmentAmount(
-  amount: number,
+  amountCents: number,
   months: MsiTenure,
   monthIndex: number,
 ): number {
-  if (amount <= 0 || months <= 0) return 0;
+  if (amountCents <= 0 || months <= 0) return 0;
   if (monthIndex < 1 || monthIndex > months) return 0;
-  const base = getMsiMonthlyAmount(amount, months);
+  const base = getMsiMonthlyAmount(amountCents, months);
   if (monthIndex === months) {
-    // Última cuota = monto total - (N-1) × base
-    // Redondeo al centavo para neutralizar drift de punto flotante.
-    const last = amount - base * (months - 1);
-    return Math.round(last * 100) / 100;
+    // Última cuota = monto total - (N-1) × base. Centavos enteros, sin
+    // redondeo adicional.
+    return amountCents - base * (months - 1);
   }
   return base;
 }
@@ -79,15 +78,13 @@ export function getMsiInstallmentAmount(
  *
  *   Σ schedule[i].amount para i=1..N === transaction.amount
  *
- * Las primeras N-1 cuotas son iguales (la cuota regular devuelta por
- * `getMsiMonthlyAmount`); la última absorbe el residuo.
+ * Cada `amount` está en centavos enteros.
  */
 export function computeMsiSchedule(
   transaction: MsiExpense,
   today: Date,
 ): MsiScheduleEntry[] {
   const start = new Date(transaction.msiStartDate);
-  const baseAmount = getMsiMonthlyAmount(transaction.amount, transaction.msiMonths);
   const months = transaction.msiMonths;
   const entries: MsiScheduleEntry[] = [];
   const startYear = start.getUTCFullYear();
@@ -99,9 +96,6 @@ export function computeMsiSchedule(
     const month = (totalMonths % 12) + 1; // 1-12
     const amount = getMsiInstallmentAmount(transaction.amount, months, i);
     entries.push({ year, month, amount });
-    // baseAmount se mantiene para legibilidad / debugging; la fuente de
-    // verdad del monto por entrada es getMsiInstallmentAmount.
-    void baseAmount;
   }
 
   // Suprimimos variable sin usar para forzar evaluación de `today` (mantener

@@ -23,7 +23,7 @@ import { CardSelect } from "@/components/form/CardSelect";
 import { MsiSelector } from "@/components/form/MsiSelector";
 import { getMsiMonthlyAmount } from "@/engine/msi";
 import { toIsoDateString } from "@/lib/date/format";
-import { displayToCents, centsToDisplay, formatCurrency } from "@/lib/money/format";
+import { formatCurrency } from "@/lib/money/format";
 import type { MsiTerm } from "@/db/schemas/transaction";
 import type { Transaction } from "@/db/schemas/transaction";
 
@@ -140,9 +140,13 @@ export function TransactionForm({
   const watchedMsiMonths = watch("msiMonths");
   const watchedDate = watch("date");
 
+  // El campo `amount` del form contiene centavos enteros (mismo contrato que
+  // la storage layer — ADR-03). CurrencyInput emite cents directamente, así
+  // que no hay round-trip display↔cents que perder. El alias `amountCents`
+  // se conserva para legibilidad en el call site de MsiSelector.
   const amountCents = useMemo(() => {
     if (typeof watchedAmount === "number" && Number.isFinite(watchedAmount)) {
-      return Math.round(watchedAmount * 100);
+      return Math.round(watchedAmount);
     }
     return 0;
   }, [watchedAmount]);
@@ -152,7 +156,7 @@ export function TransactionForm({
 
   const monthlyPreview = useMemo(() => {
     if (!isMsi || !watchedMsiMonths) return null;
-    return getMsiMonthlyAmount(centsToDisplay(amountCents), watchedMsiMonths);
+    return getMsiMonthlyAmount(amountCents, watchedMsiMonths);
   }, [isMsi, watchedMsiMonths, amountCents]);
 
   async function handleFormSubmit(values: TransactionFormValues): Promise<void> {
@@ -210,9 +214,7 @@ export function TransactionForm({
           currency={currency}
           value={amountCents}
           onChangeCents={(cents) =>
-            setValue("amount", displayToCents(cents) / 100, {
-              shouldDirty: true,
-            })
+            setValue("amount", cents, { shouldDirty: true })
           }
           invalid={!!errors.amount}
         />
@@ -335,7 +337,7 @@ export function TransactionForm({
           {monthlyPreview !== null ? (
             <p className="text-xs text-[var(--color-text-muted)]">
               Cuota mensual: <strong className="text-[var(--color-text-body)]">
-                {formatCurrency(monthlyPreview * 100, currency)}
+                {formatCurrency(monthlyPreview, currency)}
               </strong>{" "}
               durante {watchedMsiMonths} meses.
             </p>
@@ -395,7 +397,7 @@ function defaultsFor(tx: Transaction | undefined): TransactionFormValues {
   }
   return {
     type: tx.type,
-    amount: centsToDisplay(tx.amount),
+    amount: tx.amount,
     description: tx.description,
     date: toIsoDateString(new Date(tx.date)),
     category: tx.category ?? "",

@@ -9,7 +9,7 @@ import { useMemo } from "react";
 import { cn } from "@/lib/cn";
 import { getMsiMonthlyAmount } from "@/engine/msi";
 import { MSI_TERM, type MsiTerm } from "@/db/schemas/transaction";
-import { centsToDisplay, formatCurrency } from "@/lib/money/format";
+import { formatCurrency } from "@/lib/money/format";
 
 export interface MsiSelectorProps {
   /** Total amount in cents. */
@@ -33,8 +33,10 @@ export function MsiSelector({
   const previews = useMemo(
     () =>
       MSI_TERM.map((term) => {
-        const monthly = getMsiMonthlyAmount(centsToDisplay(totalCents), term);
-        return { term, monthly };
+        // Engine opera en cents; `monthlyCents` se pasa directo a
+        // formatCurrency sin re-multiplicar.
+        const monthlyCents = getMsiMonthlyAmount(totalCents, term);
+        return { term, monthly: monthlyCents };
       }),
     [totalCents],
   );
@@ -81,7 +83,7 @@ export function MsiSelector({
                 )}
               >
                 {totalCents > 0
-                  ? `${formatCurrency(monthly * 100, currency)}/mes`
+                  ? `${formatCurrency(monthly, currency)}/mes`
                   : `${term} meses`}
               </span>
             </button>
