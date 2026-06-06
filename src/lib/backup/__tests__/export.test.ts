@@ -63,7 +63,7 @@ describe("exportToJSON", () => {
       amount: 5000,
       currency: "MXN",
       description: "Salary",
-      date: FIXED_NOW.toISOString(),
+      date: "2026-06-05",
       paymentMethod: "transfer",
     });
     await db.debts.add({
@@ -72,7 +72,7 @@ describe("exportToJSON", () => {
       originalAmount: 10000,
       remainingBalance: 7500,
       fixedMonthlyPayment: 500,
-      startDate: FIXED_NOW.toISOString(),
+      startDate: "2026-06-05",
       createdAt: FIXED_NOW.toISOString(),
       updatedAt: FIXED_NOW.toISOString(),
     });

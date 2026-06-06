@@ -164,18 +164,20 @@ export function TransactionForm({
       onCancel();
       return;
     }
+    // R-4 (bug 4): pasamos el string YYYY-MM-DD directo, sin round-trip
+    // por Date/toISOString (que producía el drift de +1 día en UTC-).
     await onSubmit({
       type: values.type,
       amount: values.amount,
       description: values.description.trim(),
-      date: new Date(values.date).toISOString(),
+      date: values.date,
       category: values.category?.trim() || undefined,
       paymentMethod: values.paymentMethod,
       cardId: values.cardId && values.cardId.length > 0 ? values.cardId : undefined,
       msiMonths: values.msiMonths,
       msiStartDate:
         values.msiStartDate && values.msiStartDate.length >= 10
-          ? new Date(values.msiStartDate).toISOString()
+          ? values.msiStartDate
           : undefined,
     });
   }
@@ -399,14 +401,15 @@ function defaultsFor(tx: Transaction | undefined): TransactionFormValues {
     type: tx.type,
     amount: tx.amount,
     description: tx.description,
-    date: toIsoDateString(new Date(tx.date)),
+    // R-4: `tx.date` ya es "YYYY-MM-DD" (date-only). Pasamos directo.
+    date: tx.date,
     category: tx.category ?? "",
     paymentMethod: tx.paymentMethod,
     cardId: "cardId" in tx ? tx.cardId ?? "" : "",
     msiMonths: tx.type === "expense_msi" ? tx.msiMonths : undefined,
     msiStartDate:
       tx.type === "expense_msi"
-        ? toIsoDateString(new Date(tx.msiStartDate))
+        ? tx.msiStartDate
         : toIsoDateString(new Date()),
   };
 }
