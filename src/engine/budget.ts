@@ -1,5 +1,7 @@
 import type { Transaction } from '@/db/schemas/transaction';
+import type { FixedPayment } from '@/db/schemas/fixedPayment';
 import { type MsiTenure, getMsiInstallmentAmount } from './msi';
+import { isFixedPaymentDueThisMonth } from './fixedPayments';
 
 export interface MonthlySpending {
   total: number;
@@ -129,4 +131,17 @@ export function computePaymentForCurrentMonth(
   }
 
   return total;
+}
+
+/**
+ * Suma el monto (en cents) de los pagos fijos que caen este mes.
+ * Usa la misma lógica de recurrencia que el widget FixedPaymentsWidget.
+ */
+export function computeFixedPaymentsForMonth(
+  fixedPayments: FixedPayment[],
+  today: Date,
+): number {
+  return fixedPayments
+    .filter((fp) => isFixedPaymentDueThisMonth(fp, today))
+    .reduce((sum, fp) => sum + fp.amount, 0);
 }

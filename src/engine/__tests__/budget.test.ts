@@ -3,8 +3,10 @@ import {
   computeMonthlySpending,
   computeBudgetStatus,
   computePaymentForCurrentMonth,
+  computeFixedPaymentsForMonth,
 } from '../budget';
 import type { Transaction } from '@/db/schemas/transaction';
+import type { FixedPayment } from '@/db/schemas/fixedPayment';
 
 const today = new Date('2026-06-04T12:00:00Z');
 
@@ -245,5 +247,59 @@ describe('computePaymentForCurrentMonth', () => {
     ];
     const result = computeMonthlySpending(txs, today);
     expect(result.total).toBe(1000);
+  });
+});
+
+function makeFixedPayment(
+  amount: number,
+  period: FixedPayment['period'],
+  createdAt: string,
+): FixedPayment {
+  return {
+    id: crypto.randomUUID(),
+    amount,
+    description: 'Test FP',
+    paymentDay: 15,
+    period,
+    paymentMethod: 'cash',
+    createdAt,
+    updatedAt: createdAt,
+  };
+}
+
+describe('computeFixedPaymentsForMonth', () => {
+  it('lista vacía devuelve 0', () => {
+    expect(computeFixedPaymentsForMonth([], today)).toBe(0);
+  });
+
+  it('un único pago monthly devuelve su amount en cents', () => {
+    // Verifica explícitamente que el contrato sigue siendo cents (ADR-03).
+    const fp = makeFixedPayment(1000, 'monthly', '2026-05-01T00:00:00.000Z');
+    expect(computeFixedPaymentsForMonth([fp], today)).toBe(1000);
+  });
+
+  it('suma monthly + bimonthly creado este mes (monthsDiff=0, ambos true)', () => {
+    const monthly = makeFixedPayment(1000, 'monthly', '2026-06-01T00:00:00.000Z');
+    const bimonthly = makeFixedPayment(2500, 'bimonthly', '2026-06-01T00:00:00.000Z');
+    expect(computeFixedPaymentsForMonth([monthly, bimonthly], today)).toBe(3500);
+  });
+
+  it('con monthly + bimonthly creado hace 1 mes, sólo cuenta el monthly', () => {
+    // today = 2026-06, bimonthly creado en mayo → monthsDiff=1 → false
+    const monthly = makeFixedPayment(1000, 'monthly', '2026-05-01T00:00:00.000Z');
+    const bimonthly = makeFixedPayment(2500, 'bimonthly', '2026-05-01T00:00:00.000Z');
+    expect(computeFixedPaymentsForMonth([monthly, bimonthly], today)).toBe(1000);
+  });
+
+  it('monthly + quarterly creado hace 3 meses (monthsDiff=3) → suma ambos', () => {
+    // today = 2026-06, quarterly creado en marzo → monthsDiff=3 → true
+    const monthly = makeFixedPayment(1000, 'monthly', '2026-03-01T00:00:00.000Z');
+    const quarterly = makeFixedPayment(4000, 'quarterly', '2026-03-01T00:00:00.000Z');
+    expect(computeFixedPaymentsForMonth([monthly, quarterly], today)).toBe(5000);
+  });
+
+  it('retorna cents (no pesos): amount=1000 → 1000', () => {
+    const fp = makeFixedPayment(1000, 'monthly', '2026-05-15T12:00:00.000Z');
+    expect(computeFixedPaymentsForMonth([fp], today)).toBe(1000);
   });
 });
