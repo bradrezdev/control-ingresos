@@ -4,13 +4,13 @@ import userEvent from "@testing-library/user-event";
 import { MsiSelector } from "./MsiSelector";
 
 describe("MsiSelector", () => {
-  it("renders all 6 MSI term buttons (3, 6, 9, 12, 18, 24)", () => {
+  it("renders all 7 MSI term buttons (1, 3, 6, 9, 12, 18, 24)", () => {
     render(<MsiSelector totalCents={0} value={null} onChange={() => {}} />);
     const radios = screen.getAllByRole("radio");
-    expect(radios).toHaveLength(6);
-    // Each radio's accessible name includes its term label (e.g. "3 meses").
+    expect(radios).toHaveLength(7);
+    // Cada radio incluye su plazo (e.g. "3 meses" o "$X/mes").
     const names = radios.map((r) => r.textContent ?? "");
-    for (const term of [3, 6, 9, 12, 18, 24]) {
+    for (const term of [1, 3, 6, 9, 12, 18, 24]) {
       expect(names.some((n) => n.includes(`${term}`))).toBe(true);
     }
   });
@@ -28,13 +28,18 @@ describe("MsiSelector", () => {
     render(<MsiSelector totalCents={0} value={null} onChange={onChange} />);
     const user = userEvent.setup();
     const radios = screen.getAllByRole("radio");
-    await user.click(radios[2]!); // 9 months
-    expect(onChange).toHaveBeenCalledWith(9);
+    await user.click(radios[2]!); // 6 months (índice 2 con plazo 1 incluido)
+    expect(onChange).toHaveBeenCalledWith(6);
   });
 
   it("displays monthly preview when total is greater than 0", () => {
     render(<MsiSelector totalCents={120000} value={null} onChange={() => {}} />);
     // 1200 / 12 = 100 monthly. Look for the "100.00" pattern.
     expect(screen.getByText(/100\.00\/mes/)).toBeInTheDocument();
+  });
+
+  it("plazo 1: totalCents=1200 → preview '$12.00/mes' (cuota = total, no división)", () => {
+    render(<MsiSelector totalCents={1200} value={null} onChange={() => {}} />);
+    expect(screen.getByText("$12.00/mes")).toBeInTheDocument();
   });
 });

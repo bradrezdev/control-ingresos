@@ -29,12 +29,14 @@ describe('summarizeMsiByTenure', () => {
   });
 
   it('cuenta MSI activas por plazo y suma su deuda restante', () => {
-    // MSI a 12 meses iniciada en mayo, hoy es junio → vigente, 12 cuotas pendientes (incluye mes actual)
-    // monthly = ceil(1200/12 * 100) / 100 = 100
-    // totalDebt = 12 * 100 = 1200
+    // MSI a 12 meses iniciada en mayo, hoy es junio → vigente.
+    // monthsSinceStart = 1 (1 mes después del inicio).
+    // remaining = 12 - 1 = 11 cuotas pendientes (junio en adelante).
+    // monthly = getMsiInstallmentAmount(1200, 12, 2) = base = 100 cents.
+    // totalDebt = 11 * 100 = 1100.
     const tx = makeMsi({ msiMonths: 12, msiStartDate: '2026-05-15T10:00:00.000Z' });
     const result = summarizeMsiByTenure([tx], today);
-    expect(result[12]).toEqual({ activeCount: 1, totalDebt: 1200 });
+    expect(result[12]).toEqual({ activeCount: 1, totalDebt: 1100 });
     expect(result[6]).toEqual({ activeCount: 0, totalDebt: 0 });
   });
 
@@ -55,19 +57,24 @@ describe('summarizeMsiByTenure', () => {
     const tx1 = makeMsi({ msiMonths: 12, msiStartDate: '2026-05-15T10:00:00.000Z', amount: 1200 });
     const tx2 = makeMsi({ msiMonths: 12, msiStartDate: '2026-04-15T10:00:00.000Z', amount: 2400 });
     const result = summarizeMsiByTenure([tx1, tx2], today);
-    // tx1: 12 meses restantes (incluye actual) * 100 = 1200
-    // tx2: 11 meses restantes * 200 = 2200
-    expect(result[12]).toEqual({ activeCount: 2, totalDebt: 3400 });
+    // tx1: started May, today June → monthsSinceStart=1, remaining=11.
+    //   monthly=getMsiInstallmentAmount(1200, 12, 2)=100, totalDebt=11*100=1100.
+    // tx2: started April, today June → monthsSinceStart=2, remaining=10.
+    //   monthly=getMsiInstallmentAmount(2400, 12, 3)=200, totalDebt=10*200=2000.
+    // total: 1100 + 2000 = 3100.
+    expect(result[12]).toEqual({ activeCount: 2, totalDebt: 3100 });
   });
 
   it('distingue entre plazos distintos', () => {
     const tx3 = makeMsi({ msiMonths: 3, msiStartDate: '2026-05-15T10:00:00.000Z', amount: 600 });
     const tx6 = makeMsi({ msiMonths: 6, msiStartDate: '2026-04-15T10:00:00.000Z', amount: 1200 });
     const result = summarizeMsiByTenure([tx3, tx6], today);
-    // tx3: 3 meses restantes (incluye actual) * 200 = 600
-    expect(result[3]).toEqual({ activeCount: 1, totalDebt: 600 });
-    // tx6: 5 meses restantes * 200 = 1000
-    expect(result[6]).toEqual({ activeCount: 1, totalDebt: 1000 });
+    // tx3: started May, today June → monthsSinceStart=1, remaining=2.
+    //   monthly=getMsiInstallmentAmount(600, 3, 2)=200, totalDebt=2*200=400.
+    // tx6: started April, today June → monthsSinceStart=2, remaining=4.
+    //   monthly=getMsiInstallmentAmount(1200, 6, 3)=200, totalDebt=4*200=800.
+    expect(result[3]).toEqual({ activeCount: 1, totalDebt: 400 });
+    expect(result[6]).toEqual({ activeCount: 1, totalDebt: 800 });
     expect(result[12]).toEqual({ activeCount: 0, totalDebt: 0 });
   });
 
@@ -82,11 +89,11 @@ describe('summarizeMsiByTenure', () => {
   it('incluye MSI que inició en diciembre y aún tiene meses en junio del año siguiente', () => {
     // MSI a 12 meses empezó en diciembre 2025, hoy es junio 2026
     // mesesTranscurridos = 6 → vigente
-    // remaining = 12 - 6 + 1 = 7 meses
-    // monthly = ceil(1200/12 * 100) / 100 = 100
-    // totalDebt = 7 * 100 = 700
+    // remaining = 12 - 6 = 6 meses
+    // monthly = getMsiInstallmentAmount(1200, 12, 7) = 100
+    // totalDebt = 6 * 100 = 600
     const tx = makeMsi({ msiMonths: 12, msiStartDate: '2025-12-15T10:00:00.000Z' });
     const result = summarizeMsiByTenure([tx], today);
-    expect(result[12]).toEqual({ activeCount: 1, totalDebt: 700 });
+    expect(result[12]).toEqual({ activeCount: 1, totalDebt: 600 });
   });
 });

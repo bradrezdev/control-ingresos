@@ -28,6 +28,7 @@ import { summarizeMsiByTenure } from "@/engine/debt";
 import { MSI_TERM } from "@/db/schemas/transaction";
 import { formatCurrency } from "@/lib/money/format";
 import { centsToDisplay } from "@/lib/money/format";
+import { getColorForTerm } from "@/lib/msi/palette";
 
 ChartJS.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
@@ -80,14 +81,7 @@ export function MsiSummary(): React.JSX.Element {
       {
         label: "Deuda",
         data: MSI_TERM.map((t) => centsToDisplay(summary[t].totalDebt)),
-        backgroundColor: [
-          "rgba(16, 185, 129, 0.85)", // safe (3m)
-          "rgba(132, 204, 22, 0.85)", // (6m)
-          "rgba(245, 158, 11, 0.85)", // warning (9m)
-          "rgba(249, 115, 22, 0.85)", // (12m)
-          "rgba(239, 68, 68, 0.85)", // danger (18m)
-          "rgba(220, 38, 38, 0.85)", // (24m)
-        ],
+        backgroundColor: MSI_TERM.map((t) => getColorForTerm(t)),
         borderRadius: 8,
         borderSkipped: false,
         maxBarThickness: 56,

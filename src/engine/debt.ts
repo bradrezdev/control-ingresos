@@ -36,13 +36,14 @@ export function summarizeMsiByTenure(
     const start = new Date(tx.msiStartDate);
     const monthsSinceStart =
       (year - start.getUTCFullYear()) * 12 + (month - (start.getUTCMonth() + 1));
-    if (monthsSinceStart < 1 || monthsSinceStart > tx.msiMonths) continue;
+    // R-7 (bug 7-A): mismo fix que en budget.ts — incluir cuota 1.
+    if (monthsSinceStart < 0 || monthsSinceStart >= tx.msiMonths) continue;
 
-    const remaining = tx.msiMonths - monthsSinceStart + 1; // incluye el mes actual
+    const remaining = tx.msiMonths - monthsSinceStart; // incluye el mes actual
     const monthly = getMsiInstallmentAmount(
       tx.amount,
       tx.msiMonths as MsiTenure,
-      monthsSinceStart,
+      monthsSinceStart + 1,
     );
     result[term].activeCount += 1;
     result[term].totalDebt += remaining * monthly;

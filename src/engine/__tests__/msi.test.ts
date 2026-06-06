@@ -36,6 +36,11 @@ describe('getMsiMonthlyAmount (cents contract)', () => {
     expect(getMsiMonthlyAmount(120000, 12)).toBe(10000);
   });
 
+  it('plazo 1: la cuota regular es el monto total (sin división)', () => {
+    // $1200 a 1 mes → $1200 cuota única
+    expect(getMsiMonthlyAmount(120000, 1)).toBe(120000);
+  });
+
   it('redondea hacia ABAJO al centavo (la última cuota absorbe el residuo)', () => {
     // $10 a 3 meses → 3.33 / 3.33 / 3.34 → 333 / 333 / 334 cents
     expect(getMsiMonthlyAmount(1000, 3)).toBe(333);
@@ -62,6 +67,16 @@ describe('getMsiMonthlyAmount (cents contract)', () => {
 });
 
 describe('getMsiInstallmentAmount (cents contract)', () => {
+  it('plazo 1: la única cuota es el monto total', () => {
+    // $1200 a 1 mes → 1 sola cuota de 120000 cents
+    expect(getMsiInstallmentAmount(120000, 1, 1)).toBe(120000);
+  });
+
+  it('plazo 1: monthIndex fuera de [1, 1] devuelve 0', () => {
+    expect(getMsiInstallmentAmount(120000, 1, 2)).toBe(0);
+    expect(getMsiInstallmentAmount(120000, 1, 0)).toBe(0);
+  });
+
   it('devuelve la cuota regular para índices 1..N-1', () => {
     const amount = 1000; // $10
     const months = 3;
@@ -118,6 +133,13 @@ describe('getMsiInstallmentAmount (cents contract)', () => {
 });
 
 describe('computeMsiSchedule (cents contract)', () => {
+  it('plazo 1: genera 1 sola entrada con el monto total', () => {
+    const tx = makeMsi({ amount: 120000, msiMonths: 1, msiStartDate: '2026-05-15T10:00:00.000Z' });
+    const schedule = computeMsiSchedule(tx, today);
+    expect(schedule).toHaveLength(1);
+    expect(schedule[0]).toEqual({ year: 2026, month: 6, amount: 120000 });
+  });
+
   it('genera N entradas con la última absorbiendo el residuo (Σ === amount, en cents)', () => {
     // $10 / 3 → 3.33 / 3.33 / 3.34 → 333 / 333 / 334 cents
     const tx = makeMsi({ amount: 1000, msiMonths: 3, msiStartDate: '2026-05-15T10:00:00.000Z' });

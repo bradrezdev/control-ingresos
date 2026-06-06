@@ -134,7 +134,7 @@ describe('computePaymentForCurrentMonth', () => {
       } as Transaction,
     ];
     // directo: 100 + 50 = 150
-    // MSI: 1200/12 = 100
+    // MSI: started May, today June → monthsSinceStart=1, cuota 2 = 1200/12 = 100
     // total: 250
     const total = computePaymentForCurrentMonth(cardId, txs, today);
     expect(total).toBe(250);
@@ -156,5 +156,94 @@ describe('computePaymentForCurrentMonth', () => {
       makeExpense(100, undefined, '2026-05-01T00:00:00.000Z', { cardId }),
     ];
     expect(computePaymentForCurrentMonth(cardId, txs, today)).toBe(0);
+  });
+
+  // R-7 (bug 7-A): el gate original `< 1 || > msiMonths` saltaba la
+  // primera cuota. MSI que empezó este mes debe contar la cuota 1.
+  it('R-7-A: MSI que empezó este mes cuenta la cuota 1 en computeMonthlySpending', () => {
+    const txs: Transaction[] = [
+      {
+        id: crypto.randomUUID(),
+        type: 'expense_msi',
+        amount: 1200,
+        currency: 'MXN',
+        description: 'MSI mismo mes',
+        date: '2026-06-01T00:00:00.000Z',
+        paymentMethod: 'credit',
+        cardId: 'a',
+        msiMonths: 12,
+        msiStartDate: '2026-06-01T00:00:00.000Z',
+      } as Transaction,
+    ];
+    const result = computeMonthlySpending(txs, today);
+    // cuota 1 = 1200/12 = 100
+    expect(result.total).toBe(100);
+  });
+
+  it('R-7-A: MSI con msiStartDate anterior cuenta la cuota del mes actual', () => {
+    // started mayo, today junio → monthsSinceStart=1, cuota 2
+    const txs: Transaction[] = [
+      {
+        id: crypto.randomUUID(),
+        type: 'expense_msi',
+        amount: 1200,
+        currency: 'MXN',
+        description: 'MSI',
+        date: '2026-05-15T10:00:00.000Z',
+        paymentMethod: 'credit',
+        cardId: 'a',
+        msiMonths: 12,
+        msiStartDate: '2026-05-15T10:00:00.000Z',
+      } as Transaction,
+    ];
+    const result = computeMonthlySpending(txs, today);
+    expect(result.total).toBe(100);
+  });
+
+  it('R-7-A: MSI que ya terminó (mes > msiMonths) no se cuenta', () => {
+    const txs: Transaction[] = [
+      {
+        id: crypto.randomUUID(),
+        type: 'expense_msi',
+        amount: 300,
+        currency: 'MXN',
+        description: 'MSI terminada',
+        date: '2026-01-15T10:00:00.000Z',
+        paymentMethod: 'credit',
+        cardId: 'a',
+        msiMonths: 3,
+        msiStartDate: '2026-01-15T10:00:00.000Z',
+      } as Transaction,
+    ];
+    const result = computeMonthlySpending(txs, today);
+    expect(result.total).toBe(0);
+  });
+
+  it('R-7-B: cada paymentMethod (cash, debit, credit, transfer) contribuye al budget', () => {
+    const cardId = 'a';
+    const txs: Transaction[] = [
+      // cash gasto directo
+      {
+        ...makeExpense(100, 'comida', '2026-06-01T00:00:00.000Z'),
+        paymentMethod: 'cash',
+      } as Transaction,
+      // debit gasto directo
+      {
+        ...makeExpense(200, 'comida', '2026-06-02T00:00:00.000Z'),
+        paymentMethod: 'debit',
+      } as Transaction,
+      // credit gasto directo (con tarjeta)
+      {
+        ...makeExpense(300, 'comida', '2026-06-03T00:00:00.000Z', { cardId }),
+        paymentMethod: 'credit',
+      } as Transaction,
+      // transfer gasto directo
+      {
+        ...makeExpense(400, 'comida', '2026-06-04T00:00:00.000Z'),
+        paymentMethod: 'transfer',
+      } as Transaction,
+    ];
+    const result = computeMonthlySpending(txs, today);
+    expect(result.total).toBe(1000);
   });
 });
