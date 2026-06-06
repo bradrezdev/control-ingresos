@@ -31,7 +31,12 @@ import { NavLink } from "react-router";
 import { Button } from "@/components/ui/Button";
 import { useLiveTransactions } from "@/hooks/useLiveTransactions";
 import { useLiveSettings } from "@/hooks/useLiveSettings";
-import { computeMonthlySpending, computeBudgetStatus } from "@/engine/budget";
+import { useLiveFixedPayments } from "@/hooks/useLiveFixedPayments";
+import {
+  computeMonthlySpending,
+  computeBudgetStatus,
+  computeFixedPaymentsForMonth,
+} from "@/engine/budget";
 import { formatCurrency } from "@/lib/money/format";
 import { centsToDisplay } from "@/lib/money/format";
 import { cn } from "@/lib/cn";
@@ -48,9 +53,14 @@ const STATUS_COLOR: Record<"safe" | "warning" | "danger", string> = {
 export function BudgetControl(): React.JSX.Element {
   const transactions = useLiveTransactions();
   const settings = useLiveSettings();
+  const fixedPayments = useLiveFixedPayments();
   const today = useMemo(() => new Date(), []);
 
-  if (transactions === undefined || settings === undefined) {
+  if (
+    transactions === undefined ||
+    settings === undefined ||
+    fixedPayments === undefined
+  ) {
     return <WidgetSkeleton />;
   }
 
@@ -81,11 +91,13 @@ export function BudgetControl(): React.JSX.Element {
     );
   }
 
-  const { total } = computeMonthlySpending(transactions, today);
-  const status = computeBudgetStatus(total, monthlyLimitCents);
+  const { total: spendingTotal } = computeMonthlySpending(transactions, today);
+  const fixedTotal = computeFixedPaymentsForMonth(fixedPayments ?? [], today);
+  const combinedTotal = spendingTotal + fixedTotal;
+  const status = computeBudgetStatus(combinedTotal, monthlyLimitCents);
   const pctSpent = Math.min(100, status.percent);
   const pctRemaining = 100 - pctSpent;
-  const overBudget = total > monthlyLimitCents;
+  const overBudget = combinedTotal > monthlyLimitCents;
   const showWarning = status.percent >= 80;
 
   const data = {
@@ -147,7 +159,7 @@ export function BudgetControl(): React.JSX.Element {
           />
           <p className="text-xs text-[var(--color-text-body)]">
             {overBudget
-              ? `Excediste tu presupuesto por ${formatCurrency(total - monthlyLimitCents, settings.currency)}.`
+              ? `Excediste tu presupuesto por ${formatCurrency(combinedTotal - monthlyLimitCents, settings.currency)}.`
               : `Estás cerca de tu límite. Usaste el ${status.percent.toFixed(0)}% del presupuesto.`}
           </p>
         </div>
@@ -179,7 +191,7 @@ export function BudgetControl(): React.JSX.Element {
         <div className="mt-4 text-center">
           <p className="text-sm text-[var(--color-text-body)]">
             <strong className="font-semibold">
-              {formatCurrency(total, settings.currency)}
+              {formatCurrency(combinedTotal, settings.currency)}
             </strong>{" "}
             de{" "}
             <span className="text-[var(--color-text-muted)]">
@@ -187,8 +199,13 @@ export function BudgetControl(): React.JSX.Element {
             </span>
           </p>
           <p className="mt-1 text-xs text-[var(--color-text-muted)] tabular-nums">
-            Restante: {formatCurrency(Math.max(0, monthlyLimitCents - total), settings.currency)}
+            Restante: {formatCurrency(Math.max(0, monthlyLimitCents - combinedTotal), settings.currency)}
           </p>
+          {fixedTotal > 0 ? (
+            <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+              Incluye {formatCurrency(fixedTotal, settings.currency)} en pagos fijos
+            </p>
+          ) : null}
         </div>
       </div>
     </GlassCard>

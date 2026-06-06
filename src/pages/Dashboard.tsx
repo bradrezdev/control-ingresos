@@ -19,6 +19,11 @@ const PaymentCalendar = lazy(() =>
 const BudgetControl = lazy(() =>
   import("@/features/widgets/BudgetControl").then((m) => ({ default: m.BudgetControl })),
 );
+const FixedPaymentsWidget = lazy(() =>
+  import("@/features/widgets/FixedPaymentsWidget").then((m) => ({
+    default: m.FixedPaymentsWidget,
+  })),
+);
 const MsiSummary = lazy(() =>
   import("@/features/widgets/MsiSummary").then((m) => ({ default: m.MsiSummary })),
 );
@@ -38,6 +43,9 @@ export function Dashboard(): React.JSX.Element {
         </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
           <BudgetControl />
+        </Suspense>
+        <Suspense fallback={<WidgetSkeleton />}>
+          <FixedPaymentsWidget />
         </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
           <MsiSummary />

@@ -8,12 +8,13 @@
  * these tests will catch it.
  */
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { render, cleanup } from "@testing-library/react";
+import { render, cleanup, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
 import { SmartShopper } from "../SmartShopper";
 import { PaymentCalendar } from "../PaymentCalendar";
 import { BudgetControl } from "../BudgetControl";
 import { MsiSummary } from "../MsiSummary";
+import { FixedPaymentsWidget } from "../FixedPaymentsWidget";
 
 // Stable Date.now / new Date so the widgets' useMemo(() => new Date(), [])
 // always returns the same value across renders within a test.
@@ -32,6 +33,9 @@ vi.mock("@/hooks/useLiveSettings", () => ({
     currency: "MXN",
     updatedAt: FIXED_TODAY.toISOString(),
   }),
+}));
+vi.mock("@/hooks/useLiveFixedPayments", () => ({
+  useLiveFixedPayments: () => [],
 }));
 
 function withRouter(node: React.ReactNode) {
@@ -59,11 +63,28 @@ describe("Dashboard widgets — smoke", () => {
     expect(() => render(withRouter(<MsiSummary />))).not.toThrow();
   });
 
+  it("FixedPaymentsWidget mounts with empty data and does not throw", () => {
+    expect(() => render(withRouter(<FixedPaymentsWidget />))).not.toThrow();
+  });
+
+  it("FixedPaymentsWidget renders empty state when no payments configured", () => {
+    render(withRouter(<FixedPaymentsWidget />));
+    expect(
+      screen.getByText("No tenés pagos fijos configurados"),
+    ).toBeInTheDocument();
+  });
+
   // Hooks must be called in the same order on every render. We simulate a
   // re-render by mounting, unmounting, and remounting. If a widget adds a
   // hook after an early return between renders, this assertion will fail.
   it("all widgets survive a re-mount cycle (rules of hooks regression)", () => {
-    for (const Widget of [SmartShopper, PaymentCalendar, BudgetControl, MsiSummary]) {
+    for (const Widget of [
+      SmartShopper,
+      PaymentCalendar,
+      BudgetControl,
+      MsiSummary,
+      FixedPaymentsWidget,
+    ]) {
       const { unmount } = render(withRouter(<Widget />));
       expect(() => unmount()).not.toThrow();
       expect(() => render(withRouter(<Widget />))).not.toThrow();
