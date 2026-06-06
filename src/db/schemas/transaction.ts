@@ -6,9 +6,10 @@ export type TransactionType = z.infer<typeof TransactionType>;
 export const PaymentMethod = z.enum(['cash', 'debit', 'credit', 'transfer']);
 export type PaymentMethod = z.infer<typeof PaymentMethod>;
 
-export const MSI_TERM = [3, 6, 9, 12, 18, 24] as const;
+export const MSI_TERM = [1, 3, 6, 9, 12, 18, 24] as const;
 export type MsiTerm = (typeof MSI_TERM)[number];
 export const MsiMonths = z.union([
+  z.literal(1),
   z.literal(3),
   z.literal(6),
   z.literal(9),

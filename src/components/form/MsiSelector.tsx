@@ -49,7 +49,7 @@ export function MsiSelector({
       <div
         role="radiogroup"
         aria-label={label}
-        className="grid grid-cols-3 sm:grid-cols-6 gap-2"
+        className="grid grid-cols-3 sm:grid-cols-7 gap-2"
       >
         {previews.map(({ term, monthly }) => {
           const selected = value === term;

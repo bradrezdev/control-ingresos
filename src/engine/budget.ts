@@ -30,28 +30,33 @@ export function computeMonthlySpending(
   let total = 0;
 
   for (const tx of transactions) {
-    const txDate = new Date(tx.date);
-    if (txDate.getUTCFullYear() !== year) continue;
-    if (txDate.getUTCMonth() + 1 !== month) continue;
-
     if (tx.type === 'income') continue;
 
     let amount = tx.amount;
     if (tx.type === 'expense_msi') {
-      // Para MSI la fecha `date` es la fecha original de compra. La cuota del
-      // mes actual se aproxima con prorrateo uniforme. Si el mes actual está
-      // fuera del calendario, no contamos nada.
+      // R-7 (bug 7-A): el gate original `< 1 || > msiMonths` saltaba la
+      // PRIMERA cuota (monthsSinceStart=0 cuando MSI empezó este mes).
+      // La nueva condición es `< 0 || >= msiMonths` y se pasa
+      // `monthsSinceStart + 1` al motor (que es 1-based).
+      // NO filtramos por tx.date: el "mes actual" de un MSI se define
+      // por su msiStartDate y el calendario de cuotas, no por la fecha
+      // original de compra.
       const start = new Date(tx.msiStartDate);
       const startYear = start.getUTCFullYear();
       const startMonth = start.getUTCMonth() + 1;
       const monthsSinceStart =
         (year - startYear) * 12 + (month - startMonth);
-      if (monthsSinceStart < 1 || monthsSinceStart > tx.msiMonths) continue;
+      if (monthsSinceStart < 0 || monthsSinceStart >= tx.msiMonths) continue;
       amount = getMsiInstallmentAmount(
         tx.amount,
         tx.msiMonths as MsiTenure,
-        monthsSinceStart,
+        monthsSinceStart + 1,
       );
+    } else {
+      // Gasto directo: sí se filtra por tx.date (es la fecha de la compra).
+      const txDate = new Date(tx.date);
+      if (txDate.getUTCFullYear() !== year) continue;
+      if (txDate.getUTCMonth() + 1 !== month) continue;
     }
 
     total += amount;
@@ -109,14 +114,16 @@ export function computePaymentForCurrentMonth(
       if (txDate.getUTCMonth() + 1 !== month) continue;
       total += tx.amount;
     } else if (tx.type === 'expense_msi') {
+      // R-7 (bug 7-A): mismo fix que arriba — incluir cuota 1 cuando
+      // MSI empezó este mes.
       const start = new Date(tx.msiStartDate);
       const monthsSinceStart =
         (year - start.getUTCFullYear()) * 12 + (month - (start.getUTCMonth() + 1));
-      if (monthsSinceStart < 1 || monthsSinceStart > tx.msiMonths) continue;
+      if (monthsSinceStart < 0 || monthsSinceStart >= tx.msiMonths) continue;
       total += getMsiInstallmentAmount(
         tx.amount,
         tx.msiMonths as MsiTenure,
-        monthsSinceStart,
+        monthsSinceStart + 1,
       );
     }
   }
