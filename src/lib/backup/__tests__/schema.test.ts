@@ -17,7 +17,7 @@ describe("BackupPayloadSchema", () => {
       data: {
         transactions: [],
         cards: [],
-        debts: [],
+        fixedPayments: [],
       },
     };
   }

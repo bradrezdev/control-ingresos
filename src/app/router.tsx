@@ -12,8 +12,8 @@ const Transactions = lazy(() =>
 const Cards = lazy(() =>
   import("@/pages/Cards").then((m) => ({ default: m.Cards })),
 );
-const Debts = lazy(() =>
-  import("@/pages/Debts").then((m) => ({ default: m.Debts })),
+const FixedPayments = lazy(() =>
+  import("@/pages/FixedPayments").then((m) => ({ default: m.FixedPayments })),
 );
 const Settings = lazy(() =>
   import("@/pages/Settings").then((m) => ({ default: m.Settings })),
@@ -68,10 +68,10 @@ export const router = createBrowserRouter([
         ),
       },
       {
-        path: "debts",
+        path: "fixed-payments",
         element: (
           <LazyPage>
-            <Debts />
+            <FixedPayments />
           </LazyPage>
         ),
       },

@@ -4,7 +4,7 @@ import {
   LayoutDashboard,
   Receipt,
   CreditCard,
-  Coins,
+  Repeat,
   Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -14,7 +14,7 @@ const NAV_ITEMS = [
   { to: "/", label: "Dashboard", icon: LayoutDashboard, end: true },
   { to: "/transactions", label: "Transacciones", icon: Receipt, end: false },
   { to: "/cards", label: "Tarjetas", icon: CreditCard, end: false },
-  { to: "/debts", label: "Deudas", icon: Coins, end: false },
+  { to: "/fixed-payments", label: "Pagos fijos", icon: Repeat, end: false },
   { to: "/settings", label: "Ajustes", icon: SettingsIcon, end: false },
 ] as const;
 

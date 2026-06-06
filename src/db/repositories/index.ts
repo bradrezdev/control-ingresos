@@ -1,5 +1,5 @@
 export { cardsRepo } from './cards';
 export { transactionsRepo } from './transactions';
-export { debtsRepo } from './debts';
+export { fixedPaymentsRepo } from './fixedPayments';
 export { settingsRepo } from './settings';
 export { db } from '../database';

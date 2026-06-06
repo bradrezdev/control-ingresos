@@ -5,8 +5,8 @@
  * round-trip (export → import → re-export equality), and the
  * replace vs merge modes.
  *
- * Card fixtures use the v2 shape (daysToPayAfterCut, no last4, no
- * paymentDueDay) per BACKUP_VERSION=2.
+ * Card fixtures use the v3 shape (cardType, daysToPayAfterCut, no
+ * last4, no paymentDueDay) per BACKUP_VERSION=3.
  */
 import { describe, it, expect, beforeEach } from "vitest";
 import { db } from "@/db/database";
@@ -28,7 +28,7 @@ async function resetDb(): Promise<void> {
   await Promise.all([
     db.transactions.clear(),
     db.cards.clear(),
-    db.debts.clear(),
+    db.fixedPayments.clear(),
     db.settings.clear(),
   ]);
 }
@@ -43,6 +43,7 @@ function seedCard(id: string) {
     id,
     bank: "BBVA",
     holderName: "Seed",
+    cardType: "credit",
     cutDay: 15,
     daysToPayAfterCut: 20,
     priority: 0,
@@ -57,7 +58,7 @@ describe("parseBackupFile", () => {
       version: BACKUP_VERSION,
       exportedAt: NOW.toISOString(),
       appName: APP_NAME,
-      data: { transactions: [], cards: [], debts: [] },
+      data: { transactions: [], cards: [], fixedPayments: [] },
     };
     const result = await parseBackupFile(makeFile(payload));
     expect(result.version).toBe(BACKUP_VERSION);
@@ -78,7 +79,7 @@ describe("parseBackupFile", () => {
       version: BACKUP_VERSION + 1,
       exportedAt: NOW.toISOString(),
       appName: APP_NAME,
-      data: { transactions: [], cards: [], debts: [] },
+      data: { transactions: [], cards: [], fixedPayments: [] },
     };
     await expect(parseBackupFile(makeFile(payload))).rejects.toBeInstanceOf(
       BackupVersionError,
@@ -97,7 +98,7 @@ describe("importBackup — replace mode", () => {
     expect(await db.cards.count()).toBe(1);
 
     const replacementId = crypto.randomUUID();
-    const payload = {
+    const payload: BackupPayload = {
       version: BACKUP_VERSION,
       exportedAt: NOW.toISOString(),
       appName: APP,
@@ -108,6 +109,7 @@ describe("importBackup — replace mode", () => {
             id: replacementId,
             bank: "Santander",
             holderName: "New",
+            cardType: "credit",
             cutDay: 10,
             daysToPayAfterCut: 25,
             priority: 0,
@@ -115,7 +117,7 @@ describe("importBackup — replace mode", () => {
             updatedAt: NOW.toISOString(),
           },
         ],
-        debts: [],
+        fixedPayments: [],
       },
     };
 
@@ -140,7 +142,7 @@ describe("importBackup — merge mode", () => {
     await seedCard(sharedId);
 
     const newId = crypto.randomUUID();
-    const payload = {
+    const payload: BackupPayload = {
       version: BACKUP_VERSION,
       exportedAt: NOW.toISOString(),
       appName: APP,
@@ -151,6 +153,7 @@ describe("importBackup — merge mode", () => {
             id: sharedId,
             bank: "Santander",
             holderName: "Updated",
+            cardType: "credit",
             cutDay: 1,
             daysToPayAfterCut: 1,
             priority: 0,
@@ -161,6 +164,7 @@ describe("importBackup — merge mode", () => {
             id: newId,
             bank: "Banamex",
             holderName: "Added",
+            cardType: "credit",
             cutDay: 1,
             daysToPayAfterCut: 1,
             priority: 0,
@@ -168,7 +172,7 @@ describe("importBackup — merge mode", () => {
             updatedAt: NOW.toISOString(),
           },
         ],
-        debts: [],
+        fixedPayments: [],
       },
     };
 
@@ -187,7 +191,7 @@ describe("importBackup — merge mode", () => {
     const existingId = crypto.randomUUID();
     await seedCard(existingId);
 
-    const payload = {
+    const payload: BackupPayload = {
       version: BACKUP_VERSION,
       exportedAt: NOW.toISOString(),
       appName: APP,
@@ -198,6 +202,7 @@ describe("importBackup — merge mode", () => {
             id: crypto.randomUUID(),
             bank: "HSBC",
             holderName: "New",
+            cardType: "credit",
             cutDay: 20,
             daysToPayAfterCut: 10,
             priority: 0,
@@ -205,7 +210,7 @@ describe("importBackup — merge mode", () => {
             updatedAt: NOW.toISOString(),
           },
         ],
-        debts: [],
+        fixedPayments: [],
       },
     };
 

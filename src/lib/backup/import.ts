@@ -11,8 +11,10 @@
  *
  * Forward-compat: a payload with `version > BACKUP_VERSION` is rejected
  * because we cannot guarantee the older code understands the new shape.
- * Older payloads (version < BACKUP_VERSION) should never happen until
- * we bump the version, but we accept them as long as Zod parses cleanly.
+ *
+ * v2 → v3 incompatibility: v2 backups had `debts` (no `fixedPayments`)
+ * and lacked `cardType` on cards; they are rejected at the schema layer
+ * by `BackupPayloadSchema.parse`.
  */
 import { db } from "@/db/database";
 import {
@@ -98,7 +100,7 @@ export async function parseBackupFile(file: File | Blob): Promise<BackupPayload>
  * transaction so partial writes never persist on error.
  *
  * Antes de pasar el payload al Zod parse, normalizamos los dates de las
- * transacciones y deudas: filas exportadas por una versión vieja del app
+ * transacciones: filas exportadas por una versión vieja del app
  * (date en formato `...T00:00:00.000Z`) se acortan a date-only
  * "YYYY-MM-DD" para que Zod 4 (con `z.iso.date()`) las acepte.
  */
@@ -113,11 +115,6 @@ function normalizePayloadDates(payload: BackupPayload): BackupPayload {
         ...(tx.type === "expense_msi"
           ? { msiStartDate: normalizeToDateString(tx.msiStartDate) }
           : {}),
-      })),
-      debts: payload.data.debts.map((d) => ({
-        ...d,
-        startDate: normalizeToDateString(d.startDate),
-        ...(d.endDate ? { endDate: normalizeToDateString(d.endDate) } : {}),
       })),
     },
   };
@@ -136,7 +133,7 @@ export async function importBackup(
   const total =
     validated.data.transactions.length +
     validated.data.cards.length +
-    validated.data.debts.length +
+    validated.data.fixedPayments.length +
     (validated.data.settings ? 1 : 0);
 
   let added = 0;
@@ -146,20 +143,20 @@ export async function importBackup(
     "rw",
     db.transactions,
     db.cards,
-    db.debts,
+    db.fixedPayments,
     db.settings,
     async () => {
       if (mode === "replace") {
         await Promise.all([
           db.transactions.clear(),
           db.cards.clear(),
-          db.debts.clear(),
+          db.fixedPayments.clear(),
           db.settings.clear(),
         ]);
         await Promise.all([
           db.transactions.bulkAdd(validated.data.transactions),
           db.cards.bulkAdd(validated.data.cards),
-          db.debts.bulkAdd(validated.data.debts),
+          db.fixedPayments.bulkAdd(validated.data.fixedPayments),
           validated.data.settings
             ? db.settings.put(validated.data.settings)
             : Promise.resolve(),
@@ -181,9 +178,9 @@ export async function importBackup(
         if (existed) updated++;
         else added++;
       }
-      for (const debt of validated.data.debts) {
-        const existed = await db.debts.get(debt.id);
-        await db.debts.put(debt);
+      for (const fp of validated.data.fixedPayments) {
+        const existed = await db.fixedPayments.get(fp.id);
+        await db.fixedPayments.put(fp);
         if (existed) updated++;
         else added++;
       }

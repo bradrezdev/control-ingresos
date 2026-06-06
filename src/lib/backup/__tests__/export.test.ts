@@ -17,7 +17,7 @@ async function resetDb(): Promise<void> {
   await Promise.all([
     db.transactions.clear(),
     db.cards.clear(),
-    db.debts.clear(),
+    db.fixedPayments.clear(),
     db.settings.clear(),
   ]);
 }
@@ -38,19 +38,20 @@ describe("exportToJSON", () => {
     const payload = await exportToJSON(FIXED_NOW);
     expect(payload.data.transactions).toEqual([]);
     expect(payload.data.cards).toEqual([]);
-    expect(payload.data.debts).toEqual([]);
+    expect(payload.data.fixedPayments).toEqual([]);
     expect(payload.data.settings).toBeUndefined();
   });
 
   it("includes all stored records", async () => {
     const cardId = crypto.randomUUID();
     const txId = crypto.randomUUID();
-    const debtId = crypto.randomUUID();
+    const fpId = crypto.randomUUID();
 
     await db.cards.add({
       id: cardId,
       bank: "BBVA",
       holderName: "Test Holder",
+      cardType: "credit",
       cutDay: 15,
       daysToPayAfterCut: 20,
       priority: 0,
@@ -66,13 +67,13 @@ describe("exportToJSON", () => {
       date: "2026-06-05",
       paymentMethod: "transfer",
     });
-    await db.debts.add({
-      id: debtId,
-      creditor: "Bank",
-      originalAmount: 10000,
-      remainingBalance: 7500,
-      fixedMonthlyPayment: 500,
-      startDate: "2026-06-05",
+    await db.fixedPayments.add({
+      id: fpId,
+      amount: 10000,
+      description: "Renta",
+      paymentDay: 1,
+      period: "monthly",
+      paymentMethod: "cash",
       createdAt: FIXED_NOW.toISOString(),
       updatedAt: FIXED_NOW.toISOString(),
     });
@@ -86,7 +87,7 @@ describe("exportToJSON", () => {
     const payload = await exportToJSON(FIXED_NOW);
     expect(payload.data.transactions).toHaveLength(1);
     expect(payload.data.cards).toHaveLength(1);
-    expect(payload.data.debts).toHaveLength(1);
+    expect(payload.data.fixedPayments).toHaveLength(1);
     expect(payload.data.settings?.monthlyLimit).toBe(20000);
   });
 
@@ -96,6 +97,7 @@ describe("exportToJSON", () => {
       id: cardId,
       bank: "BBVA",
       holderName: "Round Trip",
+      cardType: "credit",
       cutDay: 10,
       daysToPayAfterCut: 25,
       priority: 0,

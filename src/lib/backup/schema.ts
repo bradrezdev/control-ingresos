@@ -2,9 +2,13 @@
  * Backup schema — control-ingresos
  *
  * Versioned wire format for the JSON export/import feature. The payload
- * mirrors the four Dexie stores plus metadata. Every change to one of
- * the underlying schemas that breaks compatibility MUST bump
+ * mirrors the Dexie stores plus metadata. Every change to one of the
+ * underlying schemas that breaks compatibility MUST bump
  * `BACKUP_VERSION`.
+ *
+ * v3: `debts` table removed (feature deprecated in favor of `fixedPayments`),
+ * `CardSchema` now requires `cardType` (debit | credit). Backups at v2 cannot
+ * be imported by v3 code because the Card shape is incompatible.
  *
  * Validation strategy:
  *   - The outer envelope (version, exportedAt, appName, data) is strict.
@@ -17,17 +21,17 @@
  */
 import { z } from "zod";
 import { CardSchema } from "@/db/schemas/card";
-import { DebtSchema } from "@/db/schemas/debt";
+import { FixedPaymentSchema } from "@/db/schemas/fixedPayment";
 import { SettingsSchema } from "@/db/schemas/settings";
 import { TransactionSchema } from "@/db/schemas/transaction";
 
-export const BACKUP_VERSION = 2 as const;
+export const BACKUP_VERSION = 3 as const;
 export const APP_NAME = "control-ingresos" as const;
 
 export const BackupDataSchema = z.object({
   transactions: z.array(TransactionSchema),
   cards: z.array(CardSchema),
-  debts: z.array(DebtSchema),
+  fixedPayments: z.array(FixedPaymentSchema),
   settings: SettingsSchema.optional(),
 });
 

@@ -13,6 +13,7 @@
  * `now` is injected to keep the function deterministic in tests.
  */
 import { db } from "@/db/database";
+import { fixedPaymentsRepo } from "@/db/repositories/fixedPayments";
 import { settingsRepo } from "@/db/repositories/settings";
 import {
   APP_NAME,
@@ -24,10 +25,10 @@ import {
 export async function exportToJSON(now: Date = new Date()): Promise<BackupPayload> {
   await db.open();
 
-  const [transactions, cards, debts, settings] = await Promise.all([
+  const [transactions, cards, fixedPayments, settings] = await Promise.all([
     db.transactions.toArray(),
     db.cards.toArray(),
-    db.debts.toArray(),
+    fixedPaymentsRepo.list(),
     settingsRepo.get(),
   ]);
 
@@ -38,7 +39,7 @@ export async function exportToJSON(now: Date = new Date()): Promise<BackupPayloa
     data: {
       transactions,
       cards,
-      debts,
+      fixedPayments,
       ...(settings ? { settings } : {}),
     },
   };

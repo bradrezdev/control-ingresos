@@ -230,10 +230,10 @@ function PreviewStep({
   const counts = {
     transactions: payload.data.transactions.length,
     cards: payload.data.cards.length,
-    debts: payload.data.debts.length,
+    fixedPayments: payload.data.fixedPayments.length,
     settings: payload.data.settings ? 1 : 0,
   };
-  const total = counts.transactions + counts.cards + counts.debts + counts.settings;
+  const total = counts.transactions + counts.cards + counts.fixedPayments + counts.settings;
 
   return (
     <div className="space-y-5">
@@ -260,7 +260,7 @@ function PreviewStep({
         <ul className="grid grid-cols-2 gap-2 text-sm">
           <CountRow label="Transacciones" count={counts.transactions} />
           <CountRow label="Tarjetas" count={counts.cards} />
-          <CountRow label="Deudas" count={counts.debts} />
+          <CountRow label="Pagos fijos" count={counts.fixedPayments} />
           <CountRow label="Ajustes" count={counts.settings} />
         </ul>
         <p className="text-xs text-[var(--color-text-muted)] mt-2">
@@ -402,7 +402,7 @@ function ReplaceConfirmStep({
             Esto borra todo lo guardado actualmente.
           </p>
           <p className="mt-1 text-[var(--color-text-muted)]">
-            Vamos a eliminar todas las transacciones, tarjetas, deudas y
+            Vamos a eliminar todas las transacciones, tarjetas, pagos fijos y
             ajustes guardados, y luego cargar sólo el contenido del respaldo.
             Esta acción no se puede deshacer.
           </p>

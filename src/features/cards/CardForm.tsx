@@ -1,14 +1,19 @@
 /**
  * CardForm — control-ingresos
  *
- * Create/edit form for a credit card. Used inside a Drawer. Uses
- * react-hook-form + zodResolver. On submit, dispatches to
+ * Create/edit form for a card (credit or debit). Used inside a Drawer.
+ * Uses react-hook-form + zodResolver. On submit, dispatches to
  * `useCardsStore.create` or `.update` depending on whether `card` was
  * provided.
  *
  * The form's schema mirrors the repository's `CardSchema` shape but
  * with `id` / `createdAt` / `updatedAt` omitted (the repo handles
  * those). The repo's Zod parse-before-persist is the final guardrail.
+ *
+ * The first field is `cardType` (Débito/Crédito). The cut/pay/limit
+ * fields are only rendered when `cardType === 'credit'`; they are
+ * hidden entirely for debit cards (not just emptied) to keep the form
+ * UI honest about what a debit card needs.
  */
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
@@ -16,12 +21,14 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
+import { Select } from "@/components/ui/Select";
 import { CurrencyInput } from "@/components/form/CurrencyInput";
 import { useCardsStore } from "@/stores/cardsStore";
 import { BANK_TINT } from "./bankTint";
 import type { Card, CardInput } from "@/db/schemas/card";
 
 const cardFormSchema = z.object({
+  cardType: z.enum(["debit", "credit"]),
   bank: z
     .string()
     .min(1, "Ingresá el banco")
@@ -34,12 +41,14 @@ const cardFormSchema = z.object({
     .number({ error: "Ingresá un día entre 1 y 31" })
     .int("Debe ser entero")
     .min(1, "Mínimo 1")
-    .max(31, "Máximo 31"),
+    .max(31, "Máximo 31")
+    .optional(),
   daysToPayAfterCut: z
     .number({ error: "Ingresá un valor entre 1 y 62" })
     .int("Debe ser entero")
     .min(1, "Mínimo 1")
-    .max(62, "Máximo 62"),
+    .max(62, "Máximo 62")
+    .optional(),
   // Optional credit limit in display units. `undefined` = no limit.
   creditLimit: z
     .number()
@@ -53,6 +62,11 @@ const BANK_OPTIONS = Object.values(BANK_TINT).map((t) => ({
   value: t.label,
   label: t.label,
 }));
+
+const CARD_TYPE_OPTIONS = [
+  { value: "debit", label: "Tarjeta de Débito" },
+  { value: "credit", label: "Tarjeta de Crédito" },
+];
 
 export interface CardFormProps {
   card?: Card | undefined;
@@ -86,11 +100,14 @@ export function CardForm({
     reset(cardToFormValues(card));
   }, [card, reset]);
 
+  const watchedCardType = watch("cardType");
   const watchedLimit = watch("creditLimit");
   const watchedLimitCents =
     typeof watchedLimit === "number" && Number.isFinite(watchedLimit)
       ? Math.round(watchedLimit * 100)
       : 0;
+
+  const isCredit = watchedCardType === "credit";
 
   async function onSubmit(values: CardFormValues): Promise<void> {
     if (!isDirty) {
@@ -98,13 +115,19 @@ export function CardForm({
       return;
     }
     const input: CardInput = {
+      cardType: values.cardType,
       bank: values.bank.trim(),
       holderName: values.holderName.trim(),
-      cutDay: values.cutDay,
-      daysToPayAfterCut: values.daysToPayAfterCut,
       // New cards start at priority 0; on edit, preserve current.
       priority: card?.priority ?? 0,
-      ...(typeof values.creditLimit === "number"
+      ...(values.cardType === "credit"
+        ? {
+            cutDay: values.cutDay ?? 1,
+            daysToPayAfterCut: values.daysToPayAfterCut ?? 15,
+          }
+        : {}),
+      ...(values.cardType === "credit" &&
+      typeof values.creditLimit === "number"
         ? { creditLimit: values.creditLimit }
         : {}),
     };
@@ -118,6 +141,28 @@ export function CardForm({
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-5" noValidate>
+      <div className="flex flex-col gap-1.5">
+        <label
+          htmlFor="card-type"
+          className="text-sm font-medium text-[var(--color-text-body)]"
+        >
+          Tipo de tarjeta
+        </label>
+        <Select
+          id="card-type"
+          options={CARD_TYPE_OPTIONS}
+          value={watchedCardType}
+          onChange={(e) =>
+            setValue(
+              "cardType",
+              e.target.value as CardFormValues["cardType"],
+              { shouldDirty: true },
+            )
+          }
+        />
+        <input type="hidden" {...register("cardType")} />
+      </div>
+
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="card-bank"
@@ -166,72 +211,76 @@ export function CardForm({
         ) : null}
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="card-cutday"
-            className="text-sm font-medium text-[var(--color-text-body)]"
-          >
-            Día de corte
-          </label>
-          <Input
-            id="card-cutday"
-            type="number"
-            min={1}
-            max={31}
-            invalid={!!errors.cutDay}
-            {...register("cutDay", { valueAsNumber: true })}
-          />
-          {errors.cutDay ? (
-            <p role="alert" className="text-xs text-[var(--color-danger)]">
-              {errors.cutDay.message}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex flex-col gap-1.5">
-          <label
-            htmlFor="card-days-to-pay"
-            className="text-sm font-medium text-[var(--color-text-body)]"
-          >
-            Días después del corte para pagar
-          </label>
-          <Input
-            id="card-days-to-pay"
-            type="number"
-            min={1}
-            max={62}
-            invalid={!!errors.daysToPayAfterCut}
-            {...register("daysToPayAfterCut", { valueAsNumber: true })}
-          />
-          {errors.daysToPayAfterCut ? (
-            <p role="alert" className="text-xs text-[var(--color-danger)]">
-              {errors.daysToPayAfterCut.message}
-            </p>
-          ) : null}
-        </div>
-      </div>
+      {isCredit ? (
+        <>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="card-cutday"
+                className="text-sm font-medium text-[var(--color-text-body)]"
+              >
+                Día de corte
+              </label>
+              <Input
+                id="card-cutday"
+                type="number"
+                min={1}
+                max={31}
+                invalid={!!errors.cutDay}
+                {...register("cutDay", { valueAsNumber: true })}
+              />
+              {errors.cutDay ? (
+                <p role="alert" className="text-xs text-[var(--color-danger)]">
+                  {errors.cutDay.message}
+                </p>
+              ) : null}
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="card-days-to-pay"
+                className="text-sm font-medium text-[var(--color-text-body)]"
+              >
+                Días después del corte para pagar
+              </label>
+              <Input
+                id="card-days-to-pay"
+                type="number"
+                min={1}
+                max={62}
+                invalid={!!errors.daysToPayAfterCut}
+                {...register("daysToPayAfterCut", { valueAsNumber: true })}
+              />
+              {errors.daysToPayAfterCut ? (
+                <p role="alert" className="text-xs text-[var(--color-danger)]">
+                  {errors.daysToPayAfterCut.message}
+                </p>
+              ) : null}
+            </div>
+          </div>
 
-      <div className="flex flex-col gap-1.5">
-        <label
-          htmlFor="card-limit"
-          className="text-sm font-medium text-[var(--color-text-body)]"
-        >
-          Límite de crédito{" "}
-          <span className="text-[var(--color-text-muted)] font-normal">
-            (opcional)
-          </span>
-        </label>
-        <CurrencyInput
-          id="card-limit"
-          value={watchedLimitCents}
-          onChangeCents={(cents) => {
-            setValue("creditLimit", cents / 100, { shouldDirty: true });
-          }}
-        />
-        <p className="text-xs text-[var(--color-text-muted)]">
-          Dejalo vacío si no querés registrarlo.
-        </p>
-      </div>
+          <div className="flex flex-col gap-1.5">
+            <label
+              htmlFor="card-limit"
+              className="text-sm font-medium text-[var(--color-text-body)]"
+            >
+              Límite de crédito{" "}
+              <span className="text-[var(--color-text-muted)] font-normal">
+                (opcional)
+              </span>
+            </label>
+            <CurrencyInput
+              id="card-limit"
+              value={watchedLimitCents}
+              onChangeCents={(cents) => {
+                setValue("creditLimit", cents / 100, { shouldDirty: true });
+              }}
+            />
+            <p className="text-xs text-[var(--color-text-muted)]">
+              Dejalo vacío si no querés registrarlo.
+            </p>
+          </div>
+        </>
+      ) : null}
 
       <div className="flex justify-end gap-2 pt-2 border-t border-[var(--color-border-subtle)]">
         <Button
@@ -258,6 +307,7 @@ export function CardForm({
 function cardToFormValues(card: Card | undefined): CardFormValues {
   if (!card) {
     return {
+      cardType: "credit",
       bank: "",
       holderName: "",
       cutDay: 1,
@@ -265,11 +315,13 @@ function cardToFormValues(card: Card | undefined): CardFormValues {
       creditLimit: undefined,
     };
   }
+  // Legacy cards (pre-v3) have `cardType === undefined`; default to credit.
   return {
+    cardType: card.cardType ?? "credit",
     bank: card.bank,
     holderName: card.holderName,
-    cutDay: card.cutDay,
-    daysToPayAfterCut: card.daysToPayAfterCut,
+    cutDay: card.cutDay ?? 1,
+    daysToPayAfterCut: card.daysToPayAfterCut ?? 15,
     creditLimit: card.creditLimit,
   };
 }

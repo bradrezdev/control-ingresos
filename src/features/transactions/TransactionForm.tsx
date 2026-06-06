@@ -151,6 +151,14 @@ export function TransactionForm({
 
   const isMsi = watchedType === "expense_msi";
   const showCardSelect = watchedMethod === "credit" || isMsi;
+  // Filtra el CardSelect por tipo: débito para 'debit', crédito para
+  // 'credit' o MSI. En los demás casos (cash/transfer) no se muestra.
+  const cardSelectType: "debit" | "credit" | undefined =
+    watchedMethod === "debit"
+      ? "debit"
+      : watchedMethod === "credit" || isMsi
+        ? "credit"
+        : undefined;
 
   const monthlyPreview = useMemo(() => {
     if (!isMsi || !watchedMsiMonths) return null;
@@ -306,6 +314,7 @@ export function TransactionForm({
           </label>
           <CardSelect
             id="tx-card"
+            {...(cardSelectType ? { cardType: cardSelectType } : {})}
             value={watch("cardId") ?? ""}
             onChange={(cardId) => setValue("cardId", cardId, { shouldDirty: true })}
             invalid={!!errors.cardId}
