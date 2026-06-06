@@ -40,9 +40,7 @@ const baseFields = z.object({
   category: z.string().max(60).optional(),
   paymentMethod: z.enum(["cash", "debit", "credit", "transfer"]),
   cardId: z.string().optional(),
-  msiMonths: z
-    .union([z.literal(1), z.literal(3), z.literal(6), z.literal(9), z.literal(12), z.literal(18), z.literal(24)])
-    .optional(),
+  msiMonths: z.number().int().min(1).max(48).optional(),
   msiStartDate: z.string().optional(),
 });
 

@@ -1,29 +1,25 @@
 /**
  * MSI term color palette — control-ingresos
  *
- * Función pura que devuelve un color por plazo MSI. Usada por
- * MsiSummary y cualquier otro chart que necesite colorear por plazo.
+ * Generador puro de colores por plazo MSI. Con el rango 1-48 una paleta
+ * estática dejaría de escalar, así que generamos colores HSL espaciando el
+ * hue uniformemente: 360 / 48 = 7.5° por plazo, con saturación y luminosidad
+ * fijas. El alpha 0.85 conserva el contraste original usado por Chart.js.
  *
- * Se vuelve función (no array literal) para que `MSI_TERM` futuro
- * no desincronice la paleta: si alguien agrega plazo 36 al array,
- * sólo necesitan agregar un color al PALETTE en el mismo orden.
+ * `FALLBACK_COLOR` cubre valores fuera de rango (term < 1 o term > 48).
  */
-import { MSI_TERM, type MsiTerm } from "@/db/schemas/transaction";
 
-const PALETTE = [
-  "rgba(16, 185, 129, 0.85)",   // 1m — safe
-  "rgba(132, 204, 22, 0.85)",  // 3m
-  "rgba(245, 158, 11, 0.85)",  // 6m — warning
-  "rgba(249, 115, 22, 0.85)",  // 9m
-  "rgba(239, 68, 68, 0.85)",   // 12m — danger
-  "rgba(220, 38, 38, 0.85)",   // 18m
-  "rgba(190, 18, 60, 0.85)",   // 24m — más oscuro
-] as const;
+const HUE_STEP = 360 / 48; // 7.5°
+const SATURATION = 70;
+const LIGHTNESS = 55;
+const ALPHA = 0.85;
 
-const FALLBACK_COLOR = "rgba(100, 116, 139, 0.85)";
+const FALLBACK_COLOR = "hsla(0, 0%, 60%, 0.85)";
 
 export function getColorForTerm(term: number): string {
-  const idx = MSI_TERM.indexOf(term as MsiTerm);
-  if (idx === -1) return FALLBACK_COLOR;
-  return PALETTE[idx] ?? FALLBACK_COLOR;
+  if (!Number.isInteger(term) || term < 1 || term > 48) {
+    return FALLBACK_COLOR;
+  }
+  const hue = ((term - 1) * HUE_STEP) % 360;
+  return `hsla(${hue}, ${SATURATION}%, ${LIGHTNESS}%, ${ALPHA})`;
 }

@@ -51,7 +51,7 @@ export function MsiSummary(): React.JSX.Element {
   }
 
   const totalActive = MSI_TERM.reduce(
-    (acc, t) => acc + summary[t].activeCount,
+    (acc, t) => acc + (summary[t]?.activeCount ?? 0),
     0,
   );
 
@@ -74,14 +74,19 @@ export function MsiSummary(): React.JSX.Element {
 
   const currency = settings.currency;
 
-  // Bar chart data — totalDebt per tenure.
+  // Con MSI_TERM expandido a 1-48 plazos, una barra por plazo produciría 48
+  // barras (mayormente vacías). Filtramos a los plazos que tienen al menos
+  // una MSI activa, así el chart sólo muestra lo accionable.
+  const activeTenures = MSI_TERM.filter((t) => (summary[t]?.activeCount ?? 0) > 0);
+
+  // Bar chart data — totalDebt per tenure activo.
   const data = {
-    labels: MSI_TERM.map((t) => `${t}m`),
+    labels: activeTenures.map((t) => `${t}m`),
     datasets: [
       {
         label: "Deuda",
-        data: MSI_TERM.map((t) => centsToDisplay(summary[t].totalDebt)),
-        backgroundColor: MSI_TERM.map((t) => getColorForTerm(t)),
+        data: activeTenures.map((t) => centsToDisplay(summary[t]?.totalDebt ?? 0)),
+        backgroundColor: activeTenures.map((t) => getColorForTerm(t)),
         borderRadius: 8,
         borderSkipped: false,
         maxBarThickness: 56,
@@ -163,7 +168,7 @@ export function MsiSummary(): React.JSX.Element {
         <tbody>
           {MSI_TERM.map((t) => {
             const s = summary[t];
-            if (s.activeCount === 0) return null;
+            if (!s || s.activeCount === 0) return null;
             return (
               <tr
                 key={t}

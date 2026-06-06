@@ -8,15 +8,23 @@ export interface MsiTenureSummary {
 }
 
 /**
- * Agrupa las MSI activas por plazo (3/6/9/12/18/24) y devuelve, para cada
- * plazo, cuántas MSI están activas este mes y cuánto deben en total (cuota
- * restante × meses que faltan).
+ * Agrupa las MSI activas por plazo y devuelve, para cada plazo, cuántas MSI
+ * están activas este mes y cuánto deben en total (cuota restante × meses que
+ * faltan).
  *
  * `totalDebt` = suma sobre cada MSI activa de
  *   (mesesRestantes × montoMensual)
  *
  * El monto mensual respeta el invariante del motor: la última cuota absorbe
  * el residuo (getMsiInstallmentAmount en vez del cálculo duplicado anterior).
+ *
+ * Notas:
+ *  - El record se pre-rellena con TODOS los plazos de `MSI_TERM` (1..48), así
+ *    cualquier acceso `result[t]` con `t ∈ MSI_TERM` está garantizado a
+ *    devolver una entrada. Se usa non-null assertion en los accesos por dos
+ *    razones: (1) `MsiTerm = number` hace que TS marque `Record<MsiTerm, X>`
+ *    como posiblemente `undefined` por `noUncheckedIndexedAccess`; (2) reescribir
+ *    a `Map` rompería la firma pública usada por `MsiSummary`.
  */
 export function summarizeMsiByTenure(
   transactions: Transaction[],
@@ -45,8 +53,12 @@ export function summarizeMsiByTenure(
       tx.msiMonths as MsiTenure,
       monthsSinceStart + 1,
     );
-    result[term].activeCount += 1;
-    result[term].totalDebt += remaining * monthly;
+    // `term` viene de tx.msiMonths que Zod valida en 1..48; el record fue
+    // pre-rellenado con todos esos plazos, así que el bucket existe.
+    const bucket = result[term];
+    if (!bucket) continue;
+    bucket.activeCount += 1;
+    bucket.totalDebt += remaining * monthly;
   }
 
   return result;

@@ -6,17 +6,11 @@ export type TransactionType = z.infer<typeof TransactionType>;
 export const PaymentMethod = z.enum(['cash', 'debit', 'credit', 'transfer']);
 export type PaymentMethod = z.infer<typeof PaymentMethod>;
 
-export const MSI_TERM = [1, 3, 6, 9, 12, 18, 24] as const;
-export type MsiTerm = (typeof MSI_TERM)[number];
-export const MsiMonths = z.union([
-  z.literal(1),
-  z.literal(3),
-  z.literal(6),
-  z.literal(9),
-  z.literal(12),
-  z.literal(18),
-  z.literal(24),
-]);
+// Plazos MSI soportados: rango 1-48 meses (antes era literal union 1/3/6/9/12/18/24).
+// El selector ahora ofrece cualquier plazo entero en este rango.
+export const MSI_TERM = Array.from({ length: 48 }, (_, i) => i + 1) as readonly number[];
+export type MsiTerm = number;
+export const MsiMonths = z.number().int().min(1).max(48);
 export type MsiMonths = z.infer<typeof MsiMonths>;
 
 const BaseTransaction = z.object({

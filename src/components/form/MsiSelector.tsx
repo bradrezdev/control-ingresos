@@ -1,12 +1,19 @@
 /**
  * MsiSelector — control-ingresos
  *
- * Visual selector for an MSI (Meses Sin Intereses) term. Shows the
- * monthly installment preview next to each option. Uses the 3/6/9/12/18/24
- * tenure list and renders as a row of pill-shaped buttons.
+ * Selector de plazo MSI (Meses Sin Intereses). Permite elegir un plazo en
+ * el rango 1-48 meses y muestra la cuota mensual estimada para cada opción.
+ *
+ * Implementación: envuelve un `<Select>` nativo (mismo lenguaje visual que el
+ * resto de los form fields). Antes era una grilla de píldoras radio, pero
+ * con 48 opciones esa UI dejó de ser práctica.
+ *
+ * Contrato de unidades (ADR-03): `totalCents` llega en centavos enteros y
+ * `monthly` se calcula vía `getMsiMonthlyAmount` (también en cents). La única
+ * conversión a display ocurre dentro de `formatCurrency`.
  */
-import { useMemo } from "react";
-import { cn } from "@/lib/cn";
+import { useId, useMemo, type ChangeEvent } from "react";
+import { Select } from "@/components/ui/Select";
 import { getMsiMonthlyAmount } from "@/engine/msi";
 import { MSI_TERM, type MsiTerm } from "@/db/schemas/transaction";
 import { formatCurrency } from "@/lib/money/format";
@@ -30,66 +37,46 @@ export function MsiSelector({
   disabled,
   label = "Plazo",
 }: MsiSelectorProps): React.JSX.Element {
-  const previews = useMemo(
+  const reactId = useId();
+  const selectId = `msi-selector-${reactId}`;
+
+  const options = useMemo(
     () =>
       MSI_TERM.map((term) => {
-        // Engine opera en cents; `monthlyCents` se pasa directo a
-        // formatCurrency sin re-multiplicar.
         const monthlyCents = getMsiMonthlyAmount(totalCents, term);
-        return { term, monthly: monthlyCents };
+        const plural = term > 1 ? "es" : "";
+        const labelText =
+          totalCents === 0
+            ? `${term} mes${plural}`
+            : `${term} mes${plural} — ${formatCurrency(monthlyCents, currency)}/mes`;
+        return { value: String(term), label: labelText };
       }),
-    [totalCents],
+    [totalCents, currency],
   );
 
+  function handleChange(e: ChangeEvent<HTMLSelectElement>): void {
+    const next = Number(e.target.value);
+    if (!Number.isFinite(next)) return;
+    onChange(next as MsiTerm);
+  }
+
   return (
-    <div className="flex flex-col gap-2 w-full">
-      <span className="text-sm font-medium text-[var(--color-text-body)]">
-        {label}
-      </span>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="grid grid-cols-3 sm:grid-cols-7 gap-2"
+    <div className="flex flex-col gap-1.5">
+      <label
+        htmlFor={selectId}
+        className="text-sm font-medium text-[var(--color-text-body)]"
       >
-        {previews.map(({ term, monthly }) => {
-          const selected = value === term;
-          return (
-            <button
-              key={term}
-              type="button"
-              role="radio"
-              aria-checked={selected}
-              disabled={disabled}
-              onClick={() => onChange(term)}
-              className={cn(
-                "flex flex-col items-center justify-center",
-                "min-h-[64px] px-3 py-2",
-                "rounded-[var(--radius-md)]",
-                "border transition-all duration-[var(--duration-fast)]",
-                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]",
-                selected
-                  ? "bg-[var(--color-primary)] text-[var(--color-text-inverse)] border-[var(--color-primary)]"
-                  : "bg-[var(--color-surface)] text-[var(--color-text-body)] border-[var(--color-border-subtle)] hover:border-[var(--color-border-strong)]",
-                disabled && "opacity-50 cursor-not-allowed",
-              )}
-            >
-              <span className="text-lg font-semibold">{term}</span>
-              <span
-                className={cn(
-                  "text-[10px] mt-0.5 font-medium",
-                  selected
-                    ? "text-[var(--color-text-inverse)]/80"
-                    : "text-[var(--color-text-muted)]",
-                )}
-              >
-                {totalCents > 0
-                  ? `${formatCurrency(monthly, currency)}/mes`
-                  : `${term} meses`}
-              </span>
-            </button>
-          );
-        })}
-      </div>
+        {label}
+      </label>
+      <Select
+        id={selectId}
+        options={options}
+        value={value === null ? "" : String(value)}
+        onChange={handleChange}
+        disabled={disabled}
+        placeholder="Seleccioná un plazo"
+        aria-label={label}
+      />
     </div>
   );
 }
