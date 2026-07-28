@@ -82,12 +82,24 @@ const TYPE_OPTIONS = [
   { value: "expense_msi", label: "Gasto a MSI" },
 ];
 
-const METHOD_OPTIONS = [
-  { value: "cash", label: "Efectivo" },
-  { value: "debit", label: "Débito" },
-  { value: "credit", label: "Crédito" },
-  { value: "transfer", label: "Transferencia" },
-];
+const METHOD_OPTIONS_BY_TYPE: Record<
+  TransactionFormValues["type"],
+  { value: TransactionFormValues["paymentMethod"]; label: string }[]
+> = {
+  income: [
+    { value: "cash", label: "Efectivo" },
+    { value: "transfer", label: "Transferencia" },
+  ],
+  expense: [
+    { value: "cash", label: "Efectivo" },
+    { value: "debit", label: "Débito" },
+    { value: "credit", label: "Crédito" },
+    { value: "transfer", label: "Transferencia" },
+  ],
+  expense_msi: [
+    { value: "credit", label: "Crédito" },
+  ],
+};
 
 export interface TransactionFormValues_Output {
   type: Transaction["type"];
@@ -137,6 +149,28 @@ export function TransactionForm({
   const watchedAmount = watch("amount");
   const watchedMsiMonths = watch("msiMonths");
   const watchedDate = watch("date");
+
+  // Opciones de método de pago según el tipo de transacción. El schema Zod
+  // ya restringe los valores válidos por tipo (IncomeSchema: cash/transfer;
+  // DirectExpenseSchema: los 4; MsiExpenseSchema: credit) — el form refleja
+  // esa restricción en la UI.
+  const methodOptions = METHOD_OPTIONS_BY_TYPE[watchedType];
+
+  // Si el usuario cambia el tipo a uno cuyas opciones de método son un
+  // subconjunto más estricto (p.ej. expense → income), el `paymentMethod`
+  // guardado puede dejar de ser válido para el nuevo tipo. Lo reseteamos
+  // a la primera opción válida para evitar que el Select nativo muestre un
+  // valor huérfano (el `<option>` correspondiente ya no existe en la lista).
+  useEffect(() => {
+    const validValues = methodOptions.map((o) => o.value);
+    if (!validValues.includes(watchedMethod)) {
+      setValue(
+        "paymentMethod",
+        validValues[0] ?? "cash",
+        { shouldDirty: true },
+      );
+    }
+  }, [watchedType, watchedMethod, methodOptions, setValue]);
 
   // El campo `amount` del form contiene centavos enteros (mismo contrato que
   // la storage layer — ADR-03). CurrencyInput emite cents directamente, así
@@ -288,7 +322,7 @@ export function TransactionForm({
         </label>
         <Select
           id="tx-method"
-          options={METHOD_OPTIONS}
+          options={methodOptions}
           value={watchedMethod}
           onChange={(e) =>
             setValue("paymentMethod", e.target.value as TransactionFormValues["paymentMethod"], {
