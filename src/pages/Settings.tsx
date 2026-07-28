@@ -106,7 +106,11 @@ export function Settings(): React.JSX.Element {
   // Loading state — full skeleton so we never flash a 0/default form.
   if (!live) {
     return (
-      <PageContainer title="Ajustes" description="Preferencias y presupuesto mensual">
+      <PageContainer
+        bare
+        title="Ajustes"
+        description="Preferencias y presupuesto mensual"
+      >
         <div className="space-y-4">
           <Skeleton className="h-4 w-32" rounded="sm" />
           <Skeleton className="h-12 w-full" rounded="md" />
@@ -119,6 +123,7 @@ export function Settings(): React.JSX.Element {
 
   return (
     <PageContainer
+      bare
       title="Ajustes"
       description="Preferencias y presupuesto mensual"
     >
