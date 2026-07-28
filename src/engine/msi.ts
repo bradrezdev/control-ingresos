@@ -2,34 +2,9 @@ import type { MsiExpense, Transaction } from '@/db/schemas/transaction';
 import { MSI_TERM, type MsiTerm } from '@/db/schemas/transaction';
 
 /**
- * =====================================================================
- * DOS CONVENCIONES MSI COEXISTEN A PROPÓSITO — NO UNIFICARLAS
- * =====================================================================
- *
- * Este módulo carga dos convenciones intencionalmente distintas sobre lo que
- * significa "cuota 1" de un MSI relativo a `msiStartDate`:
- *
- *  1. **Counting** (usada por `getCurrentMsiInstallment`,
- *     `computeMonthlySpending`, `computePaymentForCurrentMonth`,
- *     `summarizeMsiByTenure`, el badge MSI y `BudgetCard`):
- *     cuota 1 = el mes de `msiStartDate`. El MSI comienza a cobrarse desde
- *     el mes de la compra.
- *
- *  2. **Schedule** (usada SOLO por `computeMsiSchedule` /
- *     `MsiSelector` para visualizar el calendario de amortización completo):
- *     cuota 1 = `msiStartDate + 1 mes`. El primer cargo cae al mes
- *     SIGUIENTE de la compra — alineado con "el usuario aún no fue
- *     cobrado por la cuota 1 en el momento de la compra".
- *
- * Unificarlas requeriría una migración de datos para MSIs en vuelo y
- * desplazaría cada display de "mes comprometido" por un mes. La
- * convención schedule es SOLO de visualización y se conserva en su
- * módulo original (`computeMsiSchedule`) con su comentario explicativo.
- *
- * Cualquier consumidor NUEVO debe declarar explícitamente cuál convención
- * usa en su JSDoc. Para la mayoría de cálculos de "cuota del mes actual"
- * o "monto de la cuota N", usar la convención **counting**.
- * =====================================================================
+ * Convención MSI del motor:
+ * `msiStartDate` representa el mes del primer pago;
+ * la cuota 1 cae en ese mismo mes.
  */
 
 /** Tipos de plazo MSI soportados (3, 6, 9, 12, 18, 24). */
@@ -103,9 +78,10 @@ export function getMsiInstallmentAmount(
 }
 
 /**
- * Construye el calendario de N mensualidades empezando el mes siguiente a
- * `msiStartDate`. La primera cuota cae en (year, month+1) y la última N meses
- * después. La cantidad de cada cuota respeta el invariante:
+ * Construye el calendario de N mensualidades empezando en el mes de
+ * `msiStartDate`, que representa el mes del primer pago. La cuota 1 cae
+ * en ese mismo mes y la cuota N cae N - 1 meses después. La cantidad de
+ * cada cuota respeta el invariante:
  *
  *   Σ schedule[i].amount para i=1..N === transaction.amount
  *
@@ -122,7 +98,7 @@ export function computeMsiSchedule(
   const startMonth = start.getUTCMonth(); // 0-11
 
   for (let i = 1; i <= months; i += 1) {
-    const totalMonths = startMonth + i;
+    const totalMonths = startMonth + (i - 1);
     const year = startYear + Math.floor(totalMonths / 12);
     const month = (totalMonths % 12) + 1; // 1-12
     const amount = getMsiInstallmentAmount(transaction.amount, months, i);
@@ -171,16 +147,10 @@ export function getActiveMsiForCurrentMonth(
 export const MSI_TERMS: readonly MsiTenure[] = MSI_TERM;
 
 /**
- * Devuelve la cuota activa (1-based) de un MSI `tx` en el mes de `today`,
- * bajo la **convención counting** (ver bloque de cabecera del archivo).
+ * Devuelve la cuota activa (1-based) de un MSI `tx` en el mes de `today`.
  *
- * Convenciones documentadas en este módulo:
- *  - **Counting** (esta función): cuota 1 = mes de `msiStartDate`. Usada por
- *    `computeMonthlySpending`, `computePaymentForCurrentMonth`,
- *    `summarizeMsiByTenure`, el MSI badge y `BudgetCard`.
- *  - **Schedule**: cuota 1 = `msiStartDate + 1 mes`. Usada SOLO por
- *    `computeMsiSchedule` / `MsiSelector` para visualizar el calendario de
- *    amortización. NO unificar las dos convenciones.
+ * Convención: `msiStartDate` representa el mes del primer pago;
+ * cuota 1 = mes de `msiStartDate`.
  *
  * Devuelve `null` si:
  *  - `tx.type !== 'expense_msi'`

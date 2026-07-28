@@ -138,7 +138,7 @@ describe('computeMsiSchedule (cents contract)', () => {
     const tx = makeMsi({ amount: 120000, msiMonths: 1, msiStartDate: '2026-05-15T10:00:00.000Z' });
     const schedule = computeMsiSchedule(tx, today);
     expect(schedule).toHaveLength(1);
-    expect(schedule[0]).toEqual({ year: 2026, month: 6, amount: 120000 });
+    expect(schedule[0]).toEqual({ year: 2026, month: 5, amount: 120000 });
   });
 
   it('genera N entradas con la última absorbiendo el residuo (Σ === amount, en cents)', () => {
@@ -146,9 +146,9 @@ describe('computeMsiSchedule (cents contract)', () => {
     const tx = makeMsi({ amount: 1000, msiMonths: 3, msiStartDate: '2026-05-15T10:00:00.000Z' });
     const schedule = computeMsiSchedule(tx, today);
     expect(schedule).toHaveLength(3);
-    expect(schedule[0]).toEqual({ year: 2026, month: 6, amount: 333 });
-    expect(schedule[1]).toEqual({ year: 2026, month: 7, amount: 333 });
-    expect(schedule[2]).toEqual({ year: 2026, month: 8, amount: 334 });
+    expect(schedule[0]).toEqual({ year: 2026, month: 5, amount: 333 });
+    expect(schedule[1]).toEqual({ year: 2026, month: 6, amount: 333 });
+    expect(schedule[2]).toEqual({ year: 2026, month: 7, amount: 334 });
     // Invariante
     const sum = schedule.reduce((acc, e) => acc + e.amount, 0);
     expect(sum).toBe(1000);
@@ -158,9 +158,9 @@ describe('computeMsiSchedule (cents contract)', () => {
     const tx = makeMsi({ msiMonths: 3, msiStartDate: '2026-11-10T10:00:00.000Z' });
     const schedule = computeMsiSchedule(tx, today);
     expect(schedule.map((e) => `${e.year}-${e.month}`)).toEqual([
+      '2026-11',
       '2026-12',
       '2027-1',
-      '2027-2',
     ]);
   });
 
@@ -169,15 +169,41 @@ describe('computeMsiSchedule (cents contract)', () => {
     const schedule = computeMsiSchedule(tx, today);
     expect(schedule).toHaveLength(24);
     expect(schedule[0]!.year).toBe(2025);
-    expect(schedule[0]!.month).toBe(2);
-    expect(schedule[23]!.year).toBe(2027);
-    expect(schedule[23]!.month).toBe(1);
+    expect(schedule[0]!.month).toBe(1);
+    expect(schedule[23]!.year).toBe(2026);
+    expect(schedule[23]!.month).toBe(12);
   });
 
-  it('el mes de inicio correcto es el siguiente al msiStartDate', () => {
+  it('la cuota 1 cae en el mismo mes de msiStartDate', () => {
+    // Convención counting: msiStartDate ES el mes del primer pago.
     const tx = makeMsi({ msiMonths: 6, msiStartDate: '2026-01-31T10:00:00.000Z' });
     const schedule = computeMsiSchedule(tx, today);
-    expect(schedule[0]).toEqual({ year: 2026, month: 2, amount: expect.any(Number) });
+    expect(schedule[0]).toEqual({ year: 2026, month: 1, amount: expect.any(Number) });
+  });
+
+  it('genera 12 cuotas consecutivas de agosto 2026 a julio 2027 (caso de aceptación)', () => {
+    // msiStartDate 2026-08-04 + 12 meses → cuota 1 en agosto 2026,
+    // cuota 12 en julio 2027. Sin saltos, sin meses omitidos.
+    const tx = makeMsi({
+      msiMonths: 12,
+      msiStartDate: '2026-08-04',
+    });
+    const schedule = computeMsiSchedule(tx, today);
+    expect(schedule).toHaveLength(12);
+    expect(schedule.map(({ year, month }) => [year, month])).toEqual([
+      [2026, 8],
+      [2026, 9],
+      [2026, 10],
+      [2026, 11],
+      [2026, 12],
+      [2027, 1],
+      [2027, 2],
+      [2027, 3],
+      [2027, 4],
+      [2027, 5],
+      [2027, 6],
+      [2027, 7],
+    ]);
   });
 
   it('Σ del schedule completo === amount (invariante global, varios plazos)', () => {
@@ -227,13 +253,25 @@ describe('getActiveMsiForCurrentMonth', () => {
   });
 
   it('detecta MSI cuya cuota cae en el mes actual', () => {
-    // MSI empezó en mayo, hoy es junio → junio es la 1ª cuota
+    // MSI msiStartDate en mayo, hoy es junio → mayo es la cuota 1, junio es la 2.
     const tx = makeMsi({ msiMonths: 12, msiStartDate: '2026-05-15T10:00:00.000Z' });
     const result = getActiveMsiForCurrentMonth([tx], today);
     expect(result).toHaveLength(1);
     expect(result[0]).toMatchObject({
       cardId: tx.cardId,
       amount: 100000,
+      monthsTotal: 12,
+      monthIndex: 2,
+    });
+  });
+
+  it('considera activa la cuota 1 en el mes de msiStartDate', () => {
+    // Convención counting: la cuota 1 cae en el mismo mes que msiStartDate.
+    const tx = makeMsi({ msiMonths: 12, msiStartDate: '2026-06-04T12:00:00.000Z' });
+    const result = getActiveMsiForCurrentMonth([tx], today);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      cardId: tx.cardId,
       monthsTotal: 12,
       monthIndex: 1,
     });

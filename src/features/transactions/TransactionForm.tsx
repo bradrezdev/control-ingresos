@@ -70,7 +70,7 @@ const transactionFormSchema = baseFields
     (data) => data.type !== "expense_msi" || (data.msiStartDate && data.msiStartDate.length >= 10),
     {
       path: ["msiStartDate"],
-      message: "Fecha de inicio requerida",
+      message: "Fecha del primer pago requerida",
     },
   );
 
@@ -386,7 +386,7 @@ export function TransactionForm({
             </p>
           ) : null}
           <DateInput
-            label="Inicio del MSI"
+            label="Fecha del primer pago"
             value={watch("msiStartDate") ?? ""}
             onValueChange={(iso) =>
               setValue("msiStartDate", iso, { shouldDirty: true })
