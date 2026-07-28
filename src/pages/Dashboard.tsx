@@ -10,9 +10,6 @@ import { lazy, Suspense } from "react";
 import { PageContainer } from "@/components/layout/PageContainer";
 import { Skeleton } from "@/components/ui/Skeleton";
 
-const SmartShopper = lazy(() =>
-  import("@/features/widgets/SmartShopper").then((m) => ({ default: m.SmartShopper })),
-);
 const BudgetCard = lazy(() =>
   import("@/features/widgets/BudgetCard").then((m) => ({ default: m.BudgetCard })),
 );
@@ -33,9 +30,6 @@ export function Dashboard(): React.JSX.Element {
       bare
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 auto-rows-fr">
-        <Suspense fallback={<WidgetSkeleton />}>
-          <SmartShopper />
-        </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
           <BudgetCard monthOffset={0} />
         </Suspense>

@@ -1,9 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import {
-  computeCutCycle,
-  computeBestCardToUseToday,
-  findUpcomingConvenientCut,
-} from '../cycle';
+import { computeCutCycle } from '../cycle';
 import type { Card } from '@/db/schemas/card';
 
 const today = new Date('2026-06-04T12:00:00Z');
@@ -89,81 +85,5 @@ describe('computeCutCycle (daysToPayAfterCut model)', () => {
     const pay = cycle.paymentDate;
     const diffMs = pay.getTime() - cut.getTime();
     expect(Math.round(diffMs / 86_400_000)).toBe(20);
-  });
-});
-
-describe('computeBestCardToUseToday', () => {
-  it('devuelve null si no hay tarjetas', () => {
-    expect(computeBestCardToUseToday([], today)).toBeNull();
-  });
-
-  it('elige la tarjeta con mayor cycleLengthDays (mayor daysToPayAfterCut)', () => {
-    const short = makeCard({ id: 'a', cutDay: 5, daysToPayAfterCut: 15, priority: 0 });
-    const long = makeCard({ id: 'b', cutDay: 1, daysToPayAfterCut: 28, priority: 0 });
-    const best = computeBestCardToUseToday([short, long], today);
-    expect(best).not.toBeNull();
-    expect(best!.card.id).toBe('b');
-    expect(best!.cycleLengthDays).toBe(28);
-  });
-
-  it('en empate gana la tarjeta con mayor priority', () => {
-    const a = makeCard({ id: 'a', cutDay: 5, daysToPayAfterCut: 15, priority: 0 });
-    const b = makeCard({ id: 'b', cutDay: 5, daysToPayAfterCut: 15, priority: 5 });
-    const best = computeBestCardToUseToday([a, b], today);
-    expect(best!.card.id).toBe('b');
-  });
-
-  it('rationale NO contiene el literal "cortó hace poco" (ya no es un string fijo)', () => {
-    const card = makeCard({ bank: 'Banamex' });
-    const best = computeBestCardToUseToday([card], today);
-    expect(best!.rationale).not.toContain('cortó hace poco');
-  });
-
-  it('rationale refleja días reales desde el último corte', () => {
-    // hoy 4 jun, cutDay=15 → último corte fue 15 may (hace 20 días)
-    const card = makeCard({ bank: 'BBVA', cutDay: 15, daysToPayAfterCut: 20 });
-    const best = computeBestCardToUseToday([card], today);
-    expect(best!.rationale).toMatch(/hace 20 días/);
-  });
-
-  it('rationale incluye la fecha real del próximo pago', () => {
-    // cutDay=15, daysToPayAfterCut=20 → cut 15 jun, pay 5 jul
-    const card = makeCard({ bank: 'BBVA', cutDay: 15, daysToPayAfterCut: 20 });
-    const best = computeBestCardToUseToday([card], today);
-    expect(best!.rationale).toMatch(/5 de julio/);
-  });
-
-  it('rationale incluye el banco', () => {
-    const card = makeCard({ bank: 'Banamex' });
-    const best = computeBestCardToUseToday([card], today);
-    expect(best!.rationale).toContain('Banamex');
-  });
-});
-
-describe('findUpcomingConvenientCut', () => {
-  it('devuelve null si no hay tarjetas', () => {
-    expect(findUpcomingConvenientCut([], today)).toBeNull();
-  });
-
-  it('devuelve la tarjeta con el corte más inminente dentro de la ventana', () => {
-    // hoy 4 jun; card A corta en 3 días (7 jun), card B corta en 1 día (5 jun)
-    const a = makeCard({ id: 'a', cutDay: 7, daysToPayAfterCut: 20 });
-    const b = makeCard({ id: 'b', cutDay: 5, daysToPayAfterCut: 20 });
-    const result = findUpcomingConvenientCut([a, b], today, 2);
-    expect(result).not.toBeNull();
-    expect(result!.card.id).toBe('b');
-    expect(result!.daysUntilCut).toBe(1);
-  });
-
-  it('ignora tarjetas cuyo corte está fuera de la ventana', () => {
-    const a = makeCard({ id: 'a', cutDay: 20, daysToPayAfterCut: 10 });
-    expect(findUpcomingConvenientCut([a], today, 2)).toBeNull();
-  });
-
-  it('acepta ventana personalizada (withinDays)', () => {
-    const a = makeCard({ id: 'a', cutDay: 10, daysToPayAfterCut: 20 });
-    // 6 días de distancia, dentro de ventana de 7 pero no de 2
-    expect(findUpcomingConvenientCut([a], today, 2)).toBeNull();
-    expect(findUpcomingConvenientCut([a], today, 7)).not.toBeNull();
   });
 });

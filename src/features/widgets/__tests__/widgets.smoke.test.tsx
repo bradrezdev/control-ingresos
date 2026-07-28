@@ -10,7 +10,6 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { render, cleanup, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router";
-import { SmartShopper } from "../SmartShopper";
 import { BudgetCard } from "../BudgetCard";
 import { MsiSummary } from "../MsiSummary";
 import { FixedPaymentsWidget } from "../FixedPaymentsWidget";
@@ -42,10 +41,6 @@ function withRouter(node: React.ReactNode) {
 describe("Dashboard widgets — smoke", () => {
   beforeEach(() => {
     cleanup();
-  });
-
-  it("SmartShopper mounts with empty data and does not throw", () => {
-    expect(() => render(withRouter(<SmartShopper />))).not.toThrow();
   });
 
   it("BudgetCard (current month) mounts with empty data and does not throw", () => {
@@ -87,7 +82,6 @@ describe("Dashboard widgets — smoke", () => {
   // hook after an early return between renders, this assertion will fail.
   it("all widgets survive a re-mount cycle (rules of hooks regression)", () => {
     for (const Widget of [
-      SmartShopper,
       () => <BudgetCard monthOffset={0} />,
       () => <BudgetCard monthOffset={1} />,
       MsiSummary,
