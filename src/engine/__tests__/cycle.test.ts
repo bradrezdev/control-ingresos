@@ -81,12 +81,41 @@ describe('computeActivePaymentDate (last-cut based)', () => {
     expect(() => computeActivePaymentDate(card, today)).toThrow(/débito/);
   });
 
-  it('caso usuario: hoy 27 jul, Stori cutDay=15 daysToPayAfterCut=20 → 4 ago', () => {
+  it('caso usuario: hoy 27 jul, Stori cutDay=13 daysToPayAfterCut=20 → 2 ago', () => {
     const jul27 = new Date('2026-07-27T12:00:00Z');
-    const stori = makeCard({ bank: 'Stori', cutDay: 15, daysToPayAfterCut: 20 });
+    const stori = makeCard({ bank: 'Stori', cutDay: 13, daysToPayAfterCut: 20 });
+    // Convención: el día del corte NO se cuenta; el día siguiente es el día 1.
+    // 13 es el corte; 14 jul = día 1, ..., 2 ago = día 20.
     const pay = computeActivePaymentDate(stori, jul27);
     expect(pay.getUTCFullYear()).toBe(2026);
     expect(pay.getUTCMonth() + 1).toBe(8);
-    expect(pay.getUTCDate()).toBe(4);
+    expect(pay.getUTCDate()).toBe(2);
   });
+
+  // Tabla parametrizada: cutDay=13 + 20 días desde distintos meses del año.
+  // Cubre meses de 28/30/31 días y cruce de año. Resultado esperado
+  // calculado manualmente según la convención (día siguiente al corte = día 1).
+  it.each([
+    // Ene (31d) + 20d → 2 feb
+    ['2026-01-27T12:00:00Z', 2026, 2, 2],
+    // Feb (28d en 2026, no bisiesto) + 20d → 5 mar
+    ['2026-02-27T12:00:00Z', 2026, 3, 5],
+    // Abr (30d) + 20d → 3 may
+    ['2026-04-27T12:00:00Z', 2026, 5, 3],
+    // Jul (31d) + 20d → 2 ago (caso STORI)
+    ['2026-07-27T12:00:00Z', 2026, 8, 2],
+    // Dic (31d) + 20d → 2 ene (cruce de año)
+    ['2026-12-27T12:00:00Z', 2027, 1, 2],
+  ])(
+    'cutDay=13 + 20 días desde %s → %d-%02d-%02d',
+    (todayIso, year, month, day) => {
+      const card = makeCard({ cutDay: 13, daysToPayAfterCut: 20 });
+      const pay = computeActivePaymentDate(card, new Date(todayIso));
+      expect([pay.getUTCFullYear(), pay.getUTCMonth() + 1, pay.getUTCDate()]).toEqual([
+        year,
+        month,
+        day,
+      ]);
+    },
+  );
 });

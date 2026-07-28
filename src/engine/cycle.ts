@@ -54,7 +54,13 @@ function lastCutDateOnOrBefore(card: Card, today: Date): Date {
  * cuyo corte ya ocurrió (o está ocurriendo hoy) y cuyo pago es la
  * obligación inmediata del usuario.
  *
+ * El día del corte NO se cuenta: el día siguiente es el día 1 del
+ * periodo de pago. La operación es:
+ *
  *   paymentDate = lastCutDate + daysToPayAfterCut días
+ *
+ * Ejemplo: cutDay=13 y daysToPayAfterCut=20.
+ * 14 jul es el día 1 y el día 20 cae el 2 ago.
  *
  * Es la fecha que el dashboard muestra como "fecha límite de pago" en la
  * tarjeta de presupuesto, porque refleja la obligación vigente — no la
