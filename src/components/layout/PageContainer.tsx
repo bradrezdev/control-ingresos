@@ -1,10 +1,16 @@
 import type { ReactNode } from "react";
-import { cn } from "@/lib/cn";
 
 interface PageContainerProps {
   title: string;
   description?: string;
   actions?: ReactNode;
+  /**
+   * When `true`, the inner `glass` wrapper is omitted and children render
+   * directly inside the outer container. Used by pages whose children are
+   * already their own surface (e.g. Dashboard, where each widget is a
+   * `GlassCard` and the wrapper would create a double-glass).
+   */
+  bare?: boolean;
   children: ReactNode;
 }
 
@@ -12,6 +18,7 @@ export function PageContainer({
   title,
   description,
   actions,
+  bare = false,
   children,
 }: PageContainerProps): React.JSX.Element {
   return (
@@ -30,7 +37,7 @@ export function PageContainer({
         {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
       </header>
 
-      <div className={cn("glass p-6 md:p-8")}>{children}</div>
+      {bare ? children : <div className="glass p-6 md:p-8">{children}</div>}
     </div>
   );
 }
