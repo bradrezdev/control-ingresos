@@ -15,6 +15,7 @@ import { PaymentCalendar } from "../PaymentCalendar";
 import { BudgetControl } from "../BudgetControl";
 import { MsiSummary } from "../MsiSummary";
 import { FixedPaymentsWidget } from "../FixedPaymentsWidget";
+import { NextMonthBudgetControl } from "../NextMonthBudgetControl";
 
 // Stable Date.now / new Date so the widgets' useMemo(() => new Date(), [])
 // always returns the same value across renders within a test.
@@ -74,6 +75,17 @@ describe("Dashboard widgets — smoke", () => {
     ).toBeInTheDocument();
   });
 
+  it("NextMonthBudgetControl mounts with empty data and does not throw", () => {
+    expect(() => render(withRouter(<NextMonthBudgetControl />))).not.toThrow();
+  });
+
+  it("NextMonthBudgetControl renders the next-month title", () => {
+    render(withRouter(<NextMonthBudgetControl />));
+    expect(
+      screen.getByText("Presupuesto del siguiente mes"),
+    ).toBeInTheDocument();
+  });
+
   // Hooks must be called in the same order on every render. We simulate a
   // re-render by mounting, unmounting, and remounting. If a widget adds a
   // hook after an early return between renders, this assertion will fail.
@@ -84,6 +96,7 @@ describe("Dashboard widgets — smoke", () => {
       BudgetControl,
       MsiSummary,
       FixedPaymentsWidget,
+      NextMonthBudgetControl,
     ]) {
       const { unmount } = render(withRouter(<Widget />));
       expect(() => unmount()).not.toThrow();
