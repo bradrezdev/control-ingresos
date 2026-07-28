@@ -26,7 +26,7 @@ import { Skeleton } from "@/components/ui/Skeleton";
 import { EmptyState } from "@/components/feedback/EmptyState";
 import { Receipt } from "lucide-react";
 import { formatCurrency } from "@/lib/money/format";
-import { formatDate } from "@/lib/date/format";
+import { formatShortDate } from "@/lib/date/format";
 import { centsToDisplay } from "@/lib/money/format";
 import { cn } from "@/lib/cn";
 import {
@@ -109,7 +109,7 @@ export function TransactionsTable({
         ),
         cell: ({ row }) => (
           <span className="text-sm text-[var(--color-text-body)] whitespace-nowrap">
-            {formatDate(row.original.date)}
+            {formatShortDate(row.original.date)}
           </span>
         ),
       },

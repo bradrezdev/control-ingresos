@@ -4,6 +4,7 @@ import {
   formatDate,
   formatMonth,
   formatRelativeDate,
+  formatShortDate,
   monthIsoToDate,
   toIsoDateString,
 } from "./format";
@@ -73,5 +74,20 @@ describe("monthIsoToDate / dateToMonthIso", () => {
 
   it("throws on invalid input", () => {
     expect(() => monthIsoToDate("invalid")).toThrow();
+  });
+});
+
+describe("formatShortDate", () => {
+  it("formats a Date as DD/MM/YYYY", () => {
+    const d = new Date(2026, 6, 27); // July 27, 2026
+    expect(formatShortDate(d)).toBe("27/07/2026");
+  });
+
+  it("accepts an ISO date-only string without shifting the day", () => {
+    expect(formatShortDate("2026-01-05")).toBe("05/01/2026");
+  });
+
+  it("accepts an ISO timestamp", () => {
+    expect(formatShortDate("2026-12-31T12:00:00Z")).toBe("31/12/2026");
   });
 });

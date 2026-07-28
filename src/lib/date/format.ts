@@ -1,8 +1,8 @@
 /**
  * Date formatting utilities — control-ingresos
  *
- * All functions take a Date (or ISO string) and return a localized string.
- * Locale defaults to es-MX. Pure: no internal Date.now() calls.
+ * Long and relative formats use the Spanish (es) locale; numeric short
+ * formats are locale-agnostic. Pure: no internal Date.now() calls.
  */
 import { format, formatDistanceToNow, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
@@ -18,6 +18,18 @@ const DEFAULT_LOCALE = es;
 export function formatDate(date: Date | string): string {
   const d = typeof date === "string" ? parseISO(date) : date;
   return format(d, "d 'de' MMMM 'de' yyyy", { locale: DEFAULT_LOCALE });
+}
+
+/**
+ * Short numeric date format DD/MM/YYYY. Tokens are numeric and don't
+ * require a locale — useful for compact UI like table columns.
+ *
+ *   formatShortDate(new Date(2026, 6, 27)) -> "27/07/2026"
+ *   formatShortDate("2026-06-04") -> "04/06/2026"
+ */
+export function formatShortDate(date: Date | string): string {
+  const d = typeof date === "string" ? parseISO(date) : date;
+  return format(d, "dd/MM/yyyy");
 }
 
 /** Format a month as "Junio 2026" or "Jun 2026" depending on length. */

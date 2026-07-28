@@ -208,4 +208,18 @@ describe("TransactionsTable — MSI badge and Cuota column", () => {
     expect(cuotaIdx).toBeGreaterThan(montoIdx);
     expect(methodoIdx).toBeGreaterThan(cuotaIdx);
   });
+
+  it("renders the Fecha column as DD/MM/YYYY (compact format)", () => {
+    render(
+      <TransactionsTable
+        data={[makeExpense(100000, { date: "2026-07-27" })]}
+        cards={[makeCard()]}
+        currency="MXN"
+        onEdit={() => {}}
+        onDelete={() => {}}
+      />,
+    );
+    expect(screen.getByText("27/07/2026")).toBeInTheDocument();
+    expect(screen.queryByText("27 de julio de 2026")).not.toBeInTheDocument();
+  });
 });
