@@ -11,7 +11,7 @@ import { MSI_TERM, type MsiTerm } from '@/db/schemas/transaction';
  *
  *  1. **Counting** (usada por `getCurrentMsiInstallment`,
  *     `computeMonthlySpending`, `computePaymentForCurrentMonth`,
- *     `summarizeMsiByTenure`, el badge MSI y `NextMonthBudgetControl`):
+ *     `summarizeMsiByTenure`, el badge MSI y `BudgetCard`):
  *     cuota 1 = el mes de `msiStartDate`. El MSI comienza a cobrarse desde
  *     el mes de la compra.
  *
@@ -177,7 +177,7 @@ export const MSI_TERMS: readonly MsiTenure[] = MSI_TERM;
  * Convenciones documentadas en este módulo:
  *  - **Counting** (esta función): cuota 1 = mes de `msiStartDate`. Usada por
  *    `computeMonthlySpending`, `computePaymentForCurrentMonth`,
- *    `summarizeMsiByTenure`, el MSI badge y `NextMonthBudgetControl`.
+ *    `summarizeMsiByTenure`, el MSI badge y `BudgetCard`.
  *  - **Schedule**: cuota 1 = `msiStartDate + 1 mes`. Usada SOLO por
  *    `computeMsiSchedule` / `MsiSelector` para visualizar el calendario de
  *    amortización. NO unificar las dos convenciones.

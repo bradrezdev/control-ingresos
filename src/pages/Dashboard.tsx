@@ -13,20 +13,12 @@ import { Skeleton } from "@/components/ui/Skeleton";
 const SmartShopper = lazy(() =>
   import("@/features/widgets/SmartShopper").then((m) => ({ default: m.SmartShopper })),
 );
-const PaymentCalendar = lazy(() =>
-  import("@/features/widgets/PaymentCalendar").then((m) => ({ default: m.PaymentCalendar })),
-);
-const BudgetControl = lazy(() =>
-  import("@/features/widgets/BudgetControl").then((m) => ({ default: m.BudgetControl })),
+const BudgetCard = lazy(() =>
+  import("@/features/widgets/BudgetCard").then((m) => ({ default: m.BudgetCard })),
 );
 const FixedPaymentsWidget = lazy(() =>
   import("@/features/widgets/FixedPaymentsWidget").then((m) => ({
     default: m.FixedPaymentsWidget,
-  })),
-);
-const NextMonthBudgetControl = lazy(() =>
-  import("@/features/widgets/NextMonthBudgetControl").then((m) => ({
-    default: m.NextMonthBudgetControl,
   })),
 );
 const MsiSummary = lazy(() =>
@@ -38,19 +30,17 @@ export function Dashboard(): React.JSX.Element {
     <PageContainer
       title="Dashboard"
       description="Resumen financiero del mes en curso."
+      bare
     >
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 auto-rows-fr">
         <Suspense fallback={<WidgetSkeleton />}>
           <SmartShopper />
         </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
-          <PaymentCalendar />
+          <BudgetCard monthOffset={0} />
         </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
-          <BudgetControl />
-        </Suspense>
-        <Suspense fallback={<WidgetSkeleton />}>
-          <NextMonthBudgetControl />
+          <BudgetCard monthOffset={1} />
         </Suspense>
         <Suspense fallback={<WidgetSkeleton />}>
           <FixedPaymentsWidget />

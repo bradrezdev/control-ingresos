@@ -1,6 +1,4 @@
 export { SmartShopper } from "./SmartShopper";
-export { PaymentCalendar } from "./PaymentCalendar";
-export { BudgetControl } from "./BudgetControl";
+export { BudgetCard } from "./BudgetCard";
 export { FixedPaymentsWidget } from "./FixedPaymentsWidget";
-export { NextMonthBudgetControl } from "./NextMonthBudgetControl";
 export { MsiSummary } from "./MsiSummary";
