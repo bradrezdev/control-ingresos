@@ -5,8 +5,9 @@
  * and per-row actions (edit + delete). Pure presentation — receives
  * the filtered list, emits edit/delete callbacks.
  *
- * Columns: Fecha, Descripción, Tipo, Categoría, Monto, Método, Tarjeta, Acciones.
- * MSI rows show a "X/Y meses" badge in the Descripción column.
+ * Columns: Fecha, Descripción, Tipo, Categoría, Monto, Cuota, Método, Tarjeta, Acciones.
+ * MSI rows show a "X/Y meses" badge in the Descripción column where X is the
+ * active installment (Cuota = installment when active).
  */
 import { useMemo, useState } from "react";
 import {
@@ -28,6 +29,11 @@ import { formatCurrency } from "@/lib/money/format";
 import { formatDate } from "@/lib/date/format";
 import { centsToDisplay } from "@/lib/money/format";
 import { cn } from "@/lib/cn";
+import {
+  getCurrentMsiInstallment,
+  getMsiInstallmentAmount,
+  type MsiTenure,
+} from "@/engine/msi";
 import type { Card } from "@/db/schemas/card";
 import type {
   MsiExpense,
@@ -83,6 +89,12 @@ export function TransactionsTable({
     [cards],
   );
 
+  // `today` is needed for the MSI badge (currentInstallment) and the Cuota
+  // column. We memoise it once per mount so the columns memo is stable for the
+  // lifetime of the component (see deps array below). Dexie live queries refresh
+  // the data on every write, so a stale `today` across midnight is acceptable.
+  const today = useMemo(() => new Date(), []);
+
   const columns = useMemo<ColumnDef<Transaction>[]>(
     () => [
       {
@@ -113,11 +125,17 @@ export function TransactionsTable({
               <span className="text-sm text-[var(--color-text-body)] truncate">
                 {tx.description}
               </span>
-              {isMsi ? (
-                <Badge variant="info" className="self-start">
-                  {tx.msiMonths}/{tx.msiMonths} meses
-                </Badge>
-              ) : null}
+              {isMsi
+                ? (() => {
+                    const currentInstallment = getCurrentMsiInstallment(tx, today);
+                    if (currentInstallment === null) return null;
+                    return (
+                      <Badge variant="info" className="self-start">
+                        {currentInstallment}/{tx.msiMonths} meses
+                      </Badge>
+                    );
+                  })()
+                : null}
             </div>
           );
         },
@@ -167,6 +185,58 @@ export function TransactionsTable({
             >
               {isExpense ? "−" : "+"}
               {formatCurrency(tx.amount, currency)}
+            </span>
+          );
+        },
+      },
+      {
+        id: "cuota",
+        accessorFn: (tx) => {
+          if (tx.type === "income") return Number.NEGATIVE_INFINITY; // sort income to bottom by default
+          if (tx.type === "expense") return centsToDisplay(tx.amount);
+          // expense_msi: use the active installment amount, with last-installment
+          // rounding via getMsiInstallmentAmount.
+          const installment = getCurrentMsiInstallment(tx, today);
+          if (installment === null) return 0;
+          return centsToDisplay(
+            getMsiInstallmentAmount(tx.amount, tx.msiMonths as MsiTenure, installment),
+          );
+        },
+        header: ({ column }) => (
+          <SortHeader
+            label="Cuota"
+            sorted={column.getIsSorted()}
+            onClick={() => column.toggleSorting()}
+            align="right"
+          />
+        ),
+        cell: ({ row }) => {
+          const tx = row.original;
+          if (tx.type === "income") {
+            return (
+              <span className="text-sm text-[var(--color-text-muted)]">—</span>
+            );
+          }
+          if (tx.type === "expense") {
+            return (
+              <span className="text-sm font-semibold whitespace-nowrap tabular-nums text-[var(--color-danger)]">
+                −{formatCurrency(tx.amount, currency)}
+              </span>
+            );
+          }
+          // expense_msi
+          const installment = getCurrentMsiInstallment(tx, today);
+          if (installment === null) {
+            return (
+              <span className="text-sm text-[var(--color-text-muted)]">—</span>
+            );
+          }
+          return (
+            <span className="text-sm font-semibold whitespace-nowrap tabular-nums text-[var(--color-danger)]">
+              −{formatCurrency(
+                getMsiInstallmentAmount(tx.amount, tx.msiMonths as MsiTenure, installment),
+                currency,
+              )}
             </span>
           );
         },
@@ -229,7 +299,7 @@ export function TransactionsTable({
         ),
       },
     ],
-    [cardById, currency, onEdit, onDelete],
+    [cardById, currency, onEdit, onDelete, today],
   );
 
   const table = useReactTable({
