@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { computeCutCycle } from '../cycle';
+import { computeActivePaymentDate } from '../cycle';
 import type { Card } from '@/db/schemas/card';
 
 const today = new Date('2026-06-04T12:00:00Z');
@@ -23,67 +23,70 @@ function makeCard(overrides: Partial<Card> = {}): Card {
   };
 }
 
-describe('computeCutCycle (daysToPayAfterCut model)', () => {
-  it('paymentDate = cutDate + daysToPayAfterCut days', () => {
-    // hoy 4 jun, cutDay 15 → cutDate=15 jun, daysToPayAfterCut=20 → paymentDate=5 jul
+describe('computeActivePaymentDate (last-cut based)', () => {
+  it('hoy después del cutDay → pago del ciclo vigente (último corte fue este mes)', () => {
+    // hoy 27 jul, cutDay 15 → último corte = 15 jul, +20 → 4 ago
+    const jul27 = new Date('2026-07-27T12:00:00Z');
     const card = makeCard({ cutDay: 15, daysToPayAfterCut: 20 });
-    const cycle = computeCutCycle(card, today);
-    expect(cycle.cutDate.getUTCMonth() + 1).toBe(6);
-    expect(cycle.cutDate.getUTCDate()).toBe(15);
-    expect(cycle.paymentDate.getUTCMonth() + 1).toBe(7);
-    expect(cycle.paymentDate.getUTCDate()).toBe(5);
-    expect(cycle.cycleLengthDays).toBe(20);
+    const pay = computeActivePaymentDate(card, jul27);
+    expect(pay.getUTCMonth() + 1).toBe(8);
+    expect(pay.getUTCDate()).toBe(4);
   });
 
-  it('cutDay futuro este mes → próximo corte este mes', () => {
-    // hoy 4 jun, cutDay 15 → próximo corte = 15 jun (mismo mes)
+  it('hoy antes del cutDay → pago del ciclo previo (último corte fue el mes pasado)', () => {
+    // hoy 4 jun, cutDay 15 → último corte = 15 may, +20 → 4 jun
     const card = makeCard({ cutDay: 15, daysToPayAfterCut: 20 });
-    const cycle = computeCutCycle(card, today);
-    expect(cycle.cutDate.getUTCMonth() + 1).toBe(6);
-    expect(cycle.cutDate.getUTCDate()).toBe(15);
-    expect(cycle.daysUntilCut).toBe(11);
+    const pay = computeActivePaymentDate(card, today);
+    expect(pay.getUTCMonth() + 1).toBe(6);
+    expect(pay.getUTCDate()).toBe(4);
   });
 
-  it('cutDay ya pasado este mes → próximo corte mes siguiente', () => {
-    // hoy 4 jun, cutDay 1 → próximo corte = 1 jul
-    const card = makeCard({ cutDay: 1, daysToPayAfterCut: 25 });
-    const cycle = computeCutCycle(card, today);
-    expect(cycle.cutDate.getUTCMonth() + 1).toBe(7);
-    expect(cycle.cutDate.getUTCDate()).toBe(1);
+  it('hoy == cutDay → pago del ciclo que empieza hoy', () => {
+    // hoy 15 jun == cutDay 15 → último corte = 15 jun, +20 → 5 jul
+    const jun15 = new Date('2026-06-15T12:00:00Z');
+    const card = makeCard({ cutDay: 15, daysToPayAfterCut: 20 });
+    const pay = computeActivePaymentDate(card, jun15);
+    expect(pay.getUTCMonth() + 1).toBe(7);
+    expect(pay.getUTCDate()).toBe(5);
   });
 
-  it('cutDay hoy → próximo corte es el ciclo siguiente (~30 días)', () => {
-    // hoy 4 jun, cutDay 4 → el corte de hoy ya pasó, el próximo es en ~30 días
-    const card = makeCard({ cutDay: 4, daysToPayAfterCut: 25 });
-    const cycle = computeCutCycle(card, today);
-    expect(cycle.daysUntilCut).toBe(30);
-    expect(cycle.cutDate.getUTCMonth() + 1).toBe(7);
-    expect(cycle.cutDate.getUTCDate()).toBe(4);
-  });
-
-  it('cutDay 31 en febrero se clampa a 28', () => {
-    // 4 feb 2026 (no bisiesto) cutDay 31 → 28 feb
-    const feb4 = new Date('2026-02-04T12:00:00Z');
+  it('cutDay 31 en mes de 30 días → clampa al último día', () => {
+    // hoy 15 jun, cutDay 31 → último corte fue 31 may, +10 → 10 jun
     const card = makeCard({ cutDay: 31, daysToPayAfterCut: 10 });
-    const cycle = computeCutCycle(card, feb4);
-    expect(cycle.cutDate.getUTCMonth() + 1).toBe(2);
-    expect(cycle.cutDate.getUTCDate()).toBe(28);
+    const pay = computeActivePaymentDate(card, today);
+    expect(pay.getUTCMonth() + 1).toBe(6);
+    expect(pay.getUTCDate()).toBe(10);
   });
 
-  it('cycleLengthDays === daysToPayAfterCut (constante por tarjeta)', () => {
-    const a = makeCard({ cutDay: 5, daysToPayAfterCut: 15 });
-    const b = makeCard({ cutDay: 27, daysToPayAfterCut: 30 });
-    expect(computeCutCycle(a, today).cycleLengthDays).toBe(15);
-    expect(computeCutCycle(b, today).cycleLengthDays).toBe(30);
+  it('cutDay 31 en febrero → clampa a 28 y el pago cae en marzo', () => {
+    // hoy 15 mar, cutDay 31 → último corte fue 28 feb, +10 → 10 mar
+    const mar15 = new Date('2026-03-15T12:00:00Z');
+    const card = makeCard({ cutDay: 31, daysToPayAfterCut: 10 });
+    const pay = computeActivePaymentDate(card, mar15);
+    expect(pay.getUTCMonth() + 1).toBe(3);
+    expect(pay.getUTCDate()).toBe(10);
   });
 
-  it('paymentDate usa daysToPayAfterCut directo (no addMonths, no día-del-mes)', () => {
-    // cut 15 jun + 20 days = 5 jul
-    const card = makeCard({ cutDay: 15, daysToPayAfterCut: 20 });
-    const cycle = computeCutCycle(card, today);
-    const cut = cycle.cutDate;
-    const pay = cycle.paymentDate;
-    const diffMs = pay.getTime() - cut.getTime();
-    expect(Math.round(diffMs / 86_400_000)).toBe(20);
+  it('daysToPayAfterCut largo cruza fin de mes → JS Date overflow correcto', () => {
+    // hoy 27 jul, cutDay 25, daysToPayAfterCut 15 → último corte = 25 jul, +15 → 9 ago
+    const jul27 = new Date('2026-07-27T12:00:00Z');
+    const card = makeCard({ cutDay: 25, daysToPayAfterCut: 15 });
+    const pay = computeActivePaymentDate(card, jul27);
+    expect(pay.getUTCMonth() + 1).toBe(8);
+    expect(pay.getUTCDate()).toBe(9);
+  });
+
+  it('lanza error si la tarjeta es de débito', () => {
+    const card = makeCard({ cardType: 'debit' });
+    expect(() => computeActivePaymentDate(card, today)).toThrow(/débito/);
+  });
+
+  it('caso usuario: hoy 27 jul, Stori cutDay=15 daysToPayAfterCut=20 → 4 ago', () => {
+    const jul27 = new Date('2026-07-27T12:00:00Z');
+    const stori = makeCard({ bank: 'Stori', cutDay: 15, daysToPayAfterCut: 20 });
+    const pay = computeActivePaymentDate(stori, jul27);
+    expect(pay.getUTCFullYear()).toBe(2026);
+    expect(pay.getUTCMonth() + 1).toBe(8);
+    expect(pay.getUTCDate()).toBe(4);
   });
 });

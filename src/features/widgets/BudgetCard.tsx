@@ -53,7 +53,7 @@ import {
   computeFixedPaymentsForMonth,
   computePaymentForCurrentMonth,
 } from "@/engine/budget";
-import { computeCutCycle } from "@/engine/cycle";
+import { computeActivePaymentDate } from "@/engine/cycle";
 import { addMonths } from "@/lib/date/cycle";
 import {
   formatCurrency,
@@ -116,11 +116,11 @@ export function BudgetCard({
         today,
       );
       if (amount <= 0) continue;
-      const cycle = computeCutCycle(card, today);
+      const paymentDate = computeActivePaymentDate(card, today);
       rows.push({
         cardId: card.id,
         bank: card.bank,
-        paymentDate: cycle.paymentDate,
+        paymentDate,
         amount,
       });
     }

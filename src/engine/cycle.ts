@@ -1,13 +1,4 @@
 import type { Card } from '@/db/schemas/card';
-import { subMonths } from 'date-fns';
-
-export interface CutCycleInfo {
-  daysUntilCut: number;
-  daysUntilPayment: number;
-  cycleLengthDays: number;
-  cutDate: Date;
-  paymentDate: Date;
-}
 
 /** Devuelve los días del mes `year/month` (1-31), respetando bisiestos. */
 function daysInMonth(year: number, month: number): number {
@@ -25,12 +16,6 @@ function utcDate(year: number, month: number, day: number): Date {
   return new Date(Date.UTC(year, month - 1, day));
 }
 
-/** Diferencia en días entre dos Dates (b - a), ignorando hora. */
-function diffDays(a: Date, b: Date): number {
-  const ms = b.getTime() - a.getTime();
-  return Math.round(ms / 86_400_000);
-}
-
 /** Suma N meses a (year, month 1-12) y devuelve el resultado normalizado. */
 function addMonths(year: number, month: number, n: number): { year: number; month: number } {
   const total = (year * 12 + (month - 1)) + n;
@@ -38,60 +23,63 @@ function addMonths(year: number, month: number, n: number): { year: number; mont
 }
 
 /**
- * Calcula el próximo ciclo de corte y pago de una tarjeta (modelo v2):
- *   - `cutDate` = próxima ocurrencia de `cutDay` >= hoy
- *   - `paymentDate` = cutDate + `daysToPayAfterCut` días
- *   - `cycleLengthDays` === `daysToPayAfterCut` (constante por tarjeta)
+ * Última fecha de corte de la tarjeta ocurrida en o antes de `today`.
+ * Itera hasta 3 meses hacia atrás para cubrir tarjetas con cutDay tardío
+ * en el mes previo (cutDay=31 + mes de 30 días → corte cae en el mes -2).
  *
- * Tarjetas de débito no tienen ciclo de corte/pago: este motor es
- * relevante sólo para tarjetas de crédito. El caller debe filtrar las
- * tarjetas de débito antes de invocar.
+ * Se considera "en o antes" (`<=`) para que cuando `today` coincide
+ * exactamente con el cutDay, el corte de hoy cuente como el ciclo
+ * vigente (el usuario acaba de entrar al nuevo ciclo de pago).
  */
-export function computeCutCycle(card: Card, today: Date): CutCycleInfo {
+function lastCutDateOnOrBefore(card: Card, today: Date): Date {
   if (card.cardType === "debit") {
     throw new Error(
-      "computeCutCycle no aplica a tarjetas de débito (no tienen ciclo de corte/pago)",
+      "lastCutDateOnOrBefore no aplica a tarjetas de débito (no tienen ciclo de corte/pago)",
+    );
+  }
+  const cutDay = card.cutDay as number;
+  const y = today.getUTCFullYear();
+  const m = today.getUTCMonth() + 1;
+  for (let offset = 0; offset <= 2; offset += 1) {
+    const candidate = addMonths(y, m, -offset);
+    const clamped = clampDay(cutDay, candidate.year, candidate.month);
+    const dt = utcDate(candidate.year, candidate.month, clamped);
+    if (dt.getTime() <= today.getTime()) return dt;
+  }
+  return utcDate(y, m, 1);
+}
+
+/**
+ * Fecha de pago del ciclo vigente de una tarjeta de crédito: el ciclo
+ * cuyo corte ya ocurrió (o está ocurriendo hoy) y cuyo pago es la
+ * obligación inmediata del usuario.
+ *
+ *   paymentDate = lastCutDate + daysToPayAfterCut días
+ *
+ * Es la fecha que el dashboard muestra como "fecha límite de pago" en la
+ * tarjeta de presupuesto, porque refleja la obligación vigente — no la
+ * del ciclo siguiente. Usar la convención "próximo corte + N días"
+ * mostraba fechas ~1 mes adelante de la realidad.
+ *
+ * Aplica SOLO a tarjetas de crédito. Las tarjetas de débito no tienen
+ * ciclo de corte/pago: el caller debe filtrarlas antes de invocar.
+ */
+export function computeActivePaymentDate(card: Card, today: Date): Date {
+  if (card.cardType === "debit") {
+    throw new Error(
+      "computeActivePaymentDate no aplica a tarjetas de débito (no tienen ciclo de corte/pago)",
     );
   }
   // A partir de acá asumimos credit. Zod valida estos campos como requeridos
   // para credit en el superRefine, así que los `!` son seguros.
-  const cutDay = card.cutDay as number;
   const daysToPayAfterCut = card.daysToPayAfterCut as number;
+  const lastCut = lastCutDateOnOrBefore(card, today);
 
-  const todayUtc = utcDate(
-    today.getUTCFullYear(),
-    today.getUTCMonth() + 1,
-    today.getUTCDate(),
-  );
-
-  const y = todayUtc.getUTCFullYear();
-  const m = todayUtc.getUTCMonth() + 1;
-  const d = todayUtc.getUTCDate();
-
-  const baseYear = d >= cutDay ? addMonths(y, m, 1).year : y;
-  const baseMonth = d >= cutDay ? addMonths(y, m, 1).month : m;
-
-  const clampedCut = clampDay(cutDay, baseYear, baseMonth);
-  const cutDate = utcDate(baseYear, baseMonth, clampedCut);
-
-  // paymentDate = cutDate + daysToPayAfterCut días, sin addMonths y sin
-  // lógica de día-del-mes. JS Date.setUTCDate hace el overflow correctamente.
-  const paymentDate = new Date(cutDate);
+  // paymentDate = lastCut + daysToPayAfterCut días, sin addMonths y sin
+  // lógica de día-del-mes. JS Date.setUTCDate hace el overflow correctamente
+  // (ej.: 25 jul + 15 días → 9 ago).
+  const paymentDate = new Date(lastCut);
   paymentDate.setUTCDate(paymentDate.getUTCDate() + daysToPayAfterCut);
 
-  const daysUntilCut = diffDays(todayUtc, cutDate);
-  const daysUntilPayment = diffDays(todayUtc, paymentDate);
-  const cycleLengthDays = daysToPayAfterCut;
-
-  return {
-    daysUntilCut,
-    daysUntilPayment,
-    cycleLengthDays,
-    cutDate,
-    paymentDate,
-  };
+  return paymentDate;
 }
-
-// Mantener import vivo aunque no se use directamente (compat con tests que
-// re-importan desde este módulo y futuros consumidores).
-void subMonths;
