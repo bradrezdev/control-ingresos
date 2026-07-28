@@ -4,6 +4,7 @@ import {
   getMsiInstallmentAmount,
   computeMsiSchedule,
   getActiveMsiForCurrentMonth,
+  getCurrentMsiInstallment,
 } from '../msi';
 import type { MsiExpense, Transaction } from '@/db/schemas/transaction';
 
@@ -248,5 +249,78 @@ describe('getActiveMsiForCurrentMonth', () => {
     const tx = makeMsi({ msiMonths: 6, msiStartDate: '2026-07-15T10:00:00.000Z' });
     const result = getActiveMsiForCurrentMonth([tx], today);
     expect(result).toEqual([]);
+  });
+});
+
+describe('getCurrentMsiInstallment', () => {
+  it('returns null for non-MSI transactions (income)', () => {
+    const tx = {
+      id: 'i1',
+      type: 'income',
+      amount: 1000,
+      currency: 'MXN',
+      description: 'Salary',
+      date: '2026-06-01T00:00:00.000Z',
+      paymentMethod: 'transfer',
+    } as unknown as Transaction;
+    expect(getCurrentMsiInstallment(tx, today)).toBeNull();
+  });
+
+  it('returns null for non-MSI transactions (expense)', () => {
+    const tx = {
+      id: 'e1',
+      type: 'expense',
+      amount: 1000,
+      currency: 'MXN',
+      description: 'Food',
+      date: '2026-06-01T00:00:00.000Z',
+      paymentMethod: 'cash',
+    } as unknown as Transaction;
+    expect(getCurrentMsiInstallment(tx, today)).toBeNull();
+  });
+
+  it('returns 1 for an MSI created in the same month as today', () => {
+    const tx = makeMsi({ msiMonths: 15, msiStartDate: '2026-06-04T12:00:00.000Z' });
+    expect(getCurrentMsiInstallment(tx, today)).toBe(1);
+  });
+
+  it('returns 2 for an MSI created one calendar month before today', () => {
+    const tx = makeMsi({ msiMonths: 15, msiStartDate: '2026-05-15T10:00:00.000Z' });
+    expect(getCurrentMsiInstallment(tx, today)).toBe(2);
+  });
+
+  it('returns 15 for an MSI created 14 months prior (15-month term, last installment)', () => {
+    const tx = makeMsi({ msiMonths: 15, msiStartDate: '2025-04-04T12:00:00.000Z' });
+    expect(getCurrentMsiInstallment(tx, today)).toBe(15);
+  });
+
+  it('returns null when MSI has finished (monthsSinceStart >= msiMonths)', () => {
+    const tx = makeMsi({ msiMonths: 3, msiStartDate: '2026-01-15T10:00:00.000Z' });
+    expect(getCurrentMsiInstallment(tx, today)).toBeNull();
+  });
+
+  it('returns null when MSI has not started yet (future msiStartDate)', () => {
+    const tx = makeMsi({ msiMonths: 6, msiStartDate: '2026-07-15T10:00:00.000Z' });
+    expect(getCurrentMsiInstallment(tx, today)).toBeNull();
+  });
+
+  it('handles year crossing (Dec 2025 → Jun 2026 with 12 months → 7)', () => {
+    const tx = makeMsi({ msiMonths: 12, msiStartDate: '2025-12-15T10:00:00.000Z' });
+    const juneToday = new Date('2026-06-04T12:00:00Z');
+    expect(getCurrentMsiInstallment(tx, juneToday)).toBe(7);
+  });
+
+  it('honors the `today` parameter (does not freeze on new Date())', () => {
+    const tx = makeMsi({ msiMonths: 15, msiStartDate: '2026-06-04T12:00:00.000Z' });
+    const sameMonth = new Date('2026-06-30T23:59:59Z');
+    const nextMonth = new Date('2026-07-01T00:00:00Z');
+    expect(getCurrentMsiInstallment(tx, sameMonth)).toBe(1);
+    expect(getCurrentMsiInstallment(tx, nextMonth)).toBe(2);
+  });
+
+  it('uses UTC: msiStartDate=2026-07-01, today=2026-07-31 → 1 (same month)', () => {
+    const tx = makeMsi({ msiStartDate: '2026-07-01T00:00:00.000Z' });
+    const endOfJuly = new Date('2026-07-31T23:59:59Z');
+    expect(getCurrentMsiInstallment(tx, endOfJuly)).toBe(1);
   });
 });
