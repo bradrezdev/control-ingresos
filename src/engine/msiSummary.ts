@@ -1,6 +1,10 @@
 import type { Transaction } from '@/db/schemas/transaction';
 import { MSI_TERM, type MsiTerm } from '@/db/schemas/transaction';
-import { type MsiTenure, getMsiInstallmentAmount } from './msi';
+import {
+  type MsiTenure,
+  getCurrentMsiInstallment,
+  getMsiInstallmentAmount,
+} from './msi';
 
 export interface MsiTenureSummary {
   activeCount: number;
@@ -35,23 +39,19 @@ export function summarizeMsiByTenure(
     result[t] = { activeCount: 0, totalDebt: 0 };
   }
 
-  const year = today.getUTCFullYear();
-  const month = today.getUTCMonth() + 1;
-
   for (const tx of transactions) {
     if (tx.type !== 'expense_msi') continue;
     const term = tx.msiMonths as MsiTerm;
-    const start = new Date(tx.msiStartDate);
-    const monthsSinceStart =
-      (year - start.getUTCFullYear()) * 12 + (month - (start.getUTCMonth() + 1));
-    // R-7 (bug 7-A): mismo fix que en budget.ts — incluir cuota 1.
-    if (monthsSinceStart < 0 || monthsSinceStart >= tx.msiMonths) continue;
+    // Convención counting (ver cabecera de src/engine/msi.ts): cuota 1 = mes
+    // de msiStartDate. El helper decide si la MSI está activa este mes.
+    const currentInstallment = getCurrentMsiInstallment(tx, today);
+    if (currentInstallment === null) continue;
 
-    const remaining = tx.msiMonths - monthsSinceStart; // incluye el mes actual
+    const remaining = tx.msiMonths - (currentInstallment - 1); // incluye el mes actual
     const monthly = getMsiInstallmentAmount(
       tx.amount,
       tx.msiMonths as MsiTenure,
-      monthsSinceStart + 1,
+      currentInstallment,
     );
     // `term` viene de tx.msiMonths que Zod valida en 1..48; el record fue
     // pre-rellenado con todos esos plazos, así que el bucket existe.
