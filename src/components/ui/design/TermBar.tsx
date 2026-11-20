@@ -6,6 +6,8 @@ export interface TermBarProps extends HTMLAttributes<HTMLDivElement> {
   label: string;
   percent: number;
   amountCents: number;
+  /** Whether to show the percentage number between the bar and the amount. */
+  showPercent?: boolean;
 }
 
 function clamp(value: number): number {
@@ -22,6 +24,7 @@ export function TermBar({
   label,
   percent,
   amountCents,
+  showPercent = true,
   className,
   ...props
 }: TermBarProps): React.JSX.Element {
@@ -41,7 +44,7 @@ export function TermBar({
         />
       </div>
       <div className="w-[86px] shrink-0 text-right">
-        <span className="mr-2 text-muted">{clamped}%</span>
+        {showPercent ? <span className="mr-2 text-muted">{clamped}%</span> : null}
         <Amount cents={amountCents} className="text-ink font-semibold" />
       </div>
     </div>

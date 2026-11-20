@@ -1,9 +1,11 @@
-import type { HTMLAttributes } from "react";
+import type { CSSProperties, HTMLAttributes } from "react";
 import { cn } from "@/lib/cn";
 
 export interface StackBarSegment {
   value: number;
-  color: string;
+  /** Tailwind color class (e.g. "bg-primary") or an inline `style` background. */
+  color?: string;
+  style?: CSSProperties;
 }
 
 export interface StackBarProps extends HTMLAttributes<HTMLDivElement> {
@@ -36,8 +38,14 @@ export function StackBar({
         <div
           key={index}
           data-stack-segment
-          className={cn("h-full rounded-full transition-all duration-base ease-out-soft", segment.color)}
-          style={{ width: `${(segment.value / total) * 100}%` }}
+          className={cn(
+            "h-full rounded-full transition-all duration-base ease-out-soft",
+            segment.color,
+          )}
+          style={{
+            width: `${(segment.value / total) * 100}%`,
+            ...segment.style,
+          }}
         />
       ))}
     </div>

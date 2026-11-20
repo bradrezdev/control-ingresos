@@ -77,9 +77,41 @@ export function monthIsoToDate(monthIso: string): Date {
   return new Date(year, month - 1, 1);
 }
 
-/** Inverse of monthIsoToDate — "2026-06". */
+/** Inverse of `monthIsoToDate` — "2026-06". */
 export function dateToMonthIso(date: Date): string {
   const y = date.getFullYear();
   const m = String(date.getMonth() + 1).padStart(2, "0");
   return `${y}-${m}`;
+}
+
+/** Capitalises the first letter of a Spanish date string (e.g. "viernes"). */
+function capitalizeEs(value: string): string {
+  return value.replace(/^\w/, (c) => c.toUpperCase());
+}
+
+/**
+ * Long weekday date without year, used for the dashboard header.
+ *
+ *   formatLongDate(new Date(2026, 5, 4)) -> "Jueves 4 de junio"
+ */
+export function formatLongDate(date: Date): string {
+  return capitalizeEs(format(date, "EEEE d 'de' MMMM", { locale: DEFAULT_LOCALE }));
+}
+
+/**
+ * Day and month without year, used for due dates.
+ *
+ *   formatDayAndMonth(new Date(2026, 10, 22)) -> "22 de noviembre"
+ */
+export function formatDayAndMonth(date: Date): string {
+  return format(date, "d 'de' MMMM", { locale: DEFAULT_LOCALE });
+}
+
+/**
+ * Compact day + short month, used for recent transactions.
+ *
+ *   formatShortDay(new Date(2026, 7, 6)) -> "6 ago"
+ */
+export function formatShortDay(date: Date): string {
+  return format(date, "d MMM", { locale: DEFAULT_LOCALE }).toLowerCase();
 }
