@@ -7,10 +7,9 @@
  *   3. Hosts a Modal for delete confirmation.
  *   4. Hosts a filter bar (type pills + date range + card).
  */
-import { useMemo, useState } from "react";
-import { Plus } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate } from "react-router";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { useLiveCards } from "@/hooks/useLiveCards";
 import { useLiveTransactions } from "@/hooks/useLiveTransactions";
@@ -31,6 +30,8 @@ import type { Transaction, MsiTerm } from "@/db/schemas/transaction";
 type DrawerMode = "closed" | "create" | "edit";
 
 export function Transactions(): React.JSX.Element {
+  const location = useLocation();
+  const navigate = useNavigate();
   const cards = useLiveCards();
   const transactions = useLiveTransactions();
   const settings = useLiveSettings();
@@ -41,6 +42,14 @@ export function Transactions(): React.JSX.Element {
   const [editing, setEditing] = useState<Transaction | null>(null);
   const [deleting, setDeleting] = useState<Transaction | null>(null);
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+
+  useEffect(() => {
+    if (location.state?.openCreate) {
+      setEditing(null);
+      setDrawer("create");
+      navigate(location.pathname, { replace: true });
+    }
+  }, [location.state, location.pathname, navigate]);
 
   const currency = settings?.currency ?? "MXN";
 
@@ -64,10 +73,6 @@ export function Transactions(): React.JSX.Element {
     });
   }, [transactions, filters]);
 
-  function openCreate(): void {
-    setEditing(null);
-    setDrawer("create");
-  }
   function openEdit(tx: Transaction): void {
     setEditing(tx);
     setDrawer("edit");
@@ -181,16 +186,6 @@ export function Transactions(): React.JSX.Element {
     <PageContainer
       title="Transacciones"
       description="Ingresos, gastos directos y compras a meses sin intereses."
-      actions={
-        <Button
-          type="button"
-          variant="primary"
-          leftIcon={<Plus className="size-4" aria-hidden />}
-          onClick={openCreate}
-        >
-          Nueva transacción
-        </Button>
-      }
     >
       <TransactionFilters value={filters} onChange={setFilters} />
       <TransactionsTable

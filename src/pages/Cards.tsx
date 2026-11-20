@@ -13,6 +13,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { SettingsButton } from "@/components/ui/design";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { CardList } from "@/features/cards/CardList";
@@ -44,17 +45,19 @@ export function Cards(): React.JSX.Element {
 
   return (
     <PageContainer
-      title="Tarjetas de Crédito"
-      description="Ciclos de corte y pago. Arrastrá para reordenar por prioridad."
+      title="Tarjetas"
       actions={
-        <Button
-          type="button"
-          variant="primary"
-          leftIcon={<Plus className="size-4" aria-hidden />}
-          onClick={openCreate}
-        >
-          Nueva tarjeta
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="primary"
+            leftIcon={<Plus className="size-4" aria-hidden />}
+            onClick={openCreate}
+          >
+            Nueva tarjeta
+          </Button>
+          <SettingsButton />
+        </>
       }
     >
       <CardList onEdit={openEdit} onDelete={setDeleting} />

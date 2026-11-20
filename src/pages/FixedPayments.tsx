@@ -14,6 +14,7 @@
 import { useState } from "react";
 import { Plus } from "lucide-react";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { SettingsButton } from "@/components/ui/design";
 import { Button } from "@/components/ui/Button";
 import { Drawer } from "@/components/ui/Drawer";
 import { FixedPaymentList } from "@/features/fixedPayments/FixedPaymentList";
@@ -46,16 +47,18 @@ export function FixedPayments(): React.JSX.Element {
   return (
     <PageContainer
       title="Pagos fijos"
-      description="Pagos recurrentes mensuales, bimestrales o trimestrales."
       actions={
-        <Button
-          type="button"
-          variant="primary"
-          leftIcon={<Plus className="size-4" aria-hidden />}
-          onClick={openCreate}
-        >
-          Nuevo pago fijo
-        </Button>
+        <>
+          <Button
+            type="button"
+            variant="primary"
+            leftIcon={<Plus className="size-4" aria-hidden />}
+            onClick={openCreate}
+          >
+            Nuevo pago fijo
+          </Button>
+          <SettingsButton />
+        </>
       }
     >
       <FixedPaymentList onEdit={openEdit} onDelete={setDeleting} />
