@@ -41,7 +41,7 @@ export function SegmentedControl({
             aria-pressed={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              "flex-1 rounded-pill px-3 py-2 text-sm font-semibold transition-colors duration-fast ease-out-soft",
+              "flex-1 min-h-11 rounded-pill px-3 text-sm font-semibold transition-colors duration-fast ease-out-soft",
               active
                 ? "bg-surface text-primary shadow-sm"
                 : "bg-transparent text-text-secondary hover:text-primary",
