@@ -7,7 +7,7 @@ describe("MsiSelector", () => {
   it("renders 48 MSI term options (1..48) plus a placeholder when value is null", () => {
     render(<MsiSelector totalCents={0} value={null} onChange={() => {}} />);
     const options = screen.getAllByRole("option");
-    // 48 plazos + 1 opción placeholder ("Seleccioná un plazo") cuando value=null.
+    // 48 plazos + 1 opción placeholder ("Elige un plazo") cuando value=null.
     expect(options).toHaveLength(49);
     // Las primeras 48 opciones reales tienen value "1".."48".
     const realValues = options

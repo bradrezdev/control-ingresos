@@ -18,6 +18,9 @@ const FixedPayments = lazy(() =>
 const Settings = lazy(() =>
   import("@/pages/Settings").then((m) => ({ default: m.Settings })),
 );
+const NewTransaction = lazy(() =>
+  import("@/pages/NewTransaction").then((m) => ({ default: m.NewTransaction })),
+);
 
 function NotFound(): React.JSX.Element {
   return (
@@ -35,6 +38,16 @@ function LazyPage({ children }: { children: React.ReactNode }): React.JSX.Elemen
 }
 
 export const router = createBrowserRouter([
+  {
+    // Full-screen entry (S9). Intentionally OUTSIDE the AppShell: the
+    // prototype hides the floating nav on the nueva-transaccion screen.
+    path: "/transactions/new",
+    element: (
+      <LazyPage>
+        <NewTransaction />
+      </LazyPage>
+    ),
+  },
   {
     path: "/",
     element: (

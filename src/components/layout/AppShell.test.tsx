@@ -68,7 +68,7 @@ describe("AppShell", () => {
     expect(links).toHaveLength(5);
     expect(links[0]).toHaveAttribute("href", "/");
     expect(links[1]).toHaveAttribute("href", "/transactions");
-    expect(links[2]).toHaveAttribute("href", "/transactions");
+    expect(links[2]).toHaveAttribute("href", "/transactions/new");
     expect(links[2]).toHaveAttribute("aria-label", "Nueva transacción");
     expect(links[3]).toHaveAttribute("href", "/cards");
     expect(links[4]).toHaveAttribute("href", "/fixed-payments");
@@ -86,7 +86,7 @@ describe("AppShell", () => {
     expect(active).toHaveAttribute("href", "/cards");
   });
 
-  it("navigates to /transactions with openCreate state when the + button is clicked", async () => {
+  it("navigates to /transactions/new without openCreate state when the + button is clicked", async () => {
     const user = userEvent.setup();
     render(
       <Wrapper>
@@ -99,7 +99,8 @@ describe("AppShell", () => {
     await user.click(addButton);
 
     expect(screen.getByTestId("location")).toHaveTextContent(
-      "/transactions|openCreate=true",
+      "/transactions/new",
     );
+    expect(screen.getByTestId("location")).not.toHaveTextContent("openCreate");
   });
 });
