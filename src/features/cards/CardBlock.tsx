@@ -15,8 +15,7 @@
 import type { Ref } from "react";
 import { ChevronRight, GripVertical, MoreHorizontal } from "lucide-react";
 import { Amount, PaperCard, ProgressTrack, StatusPill } from "@/components/ui/design";
-import { formatDayAndMonth } from "@/lib/date/format";
-import { toLocalDay } from "./computeCardAccount";
+import { formatDayAndMonth, utcDateToLocal } from "@/lib/date/format";
 import { tintFor } from "./bankTint";
 import type { CardAccount } from "./types";
 
@@ -145,7 +144,7 @@ export function CardBlock({
               label="Pago"
               value={
                 account.paymentDate !== null
-                  ? formatDayAndMonth(toLocalDay(account.paymentDate))
+                  ? formatDayAndMonth(utcDateToLocal(account.paymentDate))
                   : "—"
               }
               chip={

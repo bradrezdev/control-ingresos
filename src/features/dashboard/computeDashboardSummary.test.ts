@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { Card, FixedPayment, Transaction } from "@/db/schemas";
+import {
+  formatDayAndMonth,
+  formatShortDay,
+  toIsoDateString,
+  utcDateToLocal,
+} from "@/lib/date/format";
 import { computeDashboardSummary } from "./computeDashboardSummary";
 
 const today = new Date(2026, 10, 20); // 20 de noviembre de 2026
@@ -236,5 +242,99 @@ describe("computeDashboardSummary", () => {
     expect(summary.selectedMonth).toBe("next");
     expect(summary.monthLabel).toBe("Diciembre");
     expect(summary.isCurrentMonth).toBe(false);
+  });
+});
+
+describe("computeDashboardSummary — fechas del motor (convención UTC)", () => {
+  // Noon UTC keeps the engine's UTC calendar day (Nov 20) identical in any
+  // runner timezone — the same convention documented in computeCardAccount.
+  const todayNoonUtc = new Date("2026-11-20T12:00:00Z");
+
+  const tzCards: Card[] = [
+    {
+      id: "card-1",
+      bank: "PLATA",
+      holderName: "Usuario",
+      cardType: "credit",
+      cutDay: 17,
+      daysToPayAfterCut: 5,
+      creditLimit: 1_000_000,
+      priority: 0,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+    {
+      id: "card-2",
+      bank: "Mercado Pago",
+      holderName: "Usuario",
+      cardType: "credit",
+      cutDay: 5,
+      daysToPayAfterCut: 5,
+      creditLimit: 500_000,
+      priority: 1,
+      createdAt: "2026-01-01T00:00:00.000Z",
+      updatedAt: "2026-01-01T00:00:00.000Z",
+    },
+  ];
+
+  const tzTransactions: Transaction[] = [
+    {
+      id: "tx-1",
+      type: "expense",
+      amount: 100_000,
+      currency: "MXN",
+      description: "Sábado de compra",
+      date: "2026-11-20",
+      category: "Comida",
+      paymentMethod: "credit",
+      cardId: "card-1",
+    },
+    {
+      id: "tx-2",
+      type: "expense",
+      amount: 50_000,
+      currency: "MXN",
+      description: "Gas del mes",
+      date: "2026-11-06",
+      category: "Hogar",
+      paymentMethod: "credit",
+      cardId: "card-2",
+    },
+  ];
+
+  const tzData = {
+    transactions: tzTransactions,
+    cards: tzCards,
+    fixedPayments: [] as FixedPayment[],
+    settings: { monthlyLimit: 2_500_000, currency: "MXN" },
+  };
+
+  it("keeps card payment dates in the engine UTC convention (2026-11-22T00:00:00.000Z)", () => {
+    const summary = computeDashboardSummary(tzData, "current", {
+      today: todayNoonUtc,
+    });
+    const plata = summary.cardPayments.find((r) => r.bank === "PLATA");
+    expect(plata?.paymentDate.toISOString()).toBe("2026-11-22T00:00:00.000Z");
+    expect(plata?.daysUntil).toBe(2);
+  });
+
+  it("renders the engine's calendar day when the display edge converts with utcDateToLocal", () => {
+    const summary = computeDashboardSummary(tzData, "current", {
+      today: todayNoonUtc,
+    });
+    const plata = summary.cardPayments.find((r) => r.bank === "PLATA");
+    expect(formatDayAndMonth(utcDateToLocal(plata!.paymentDate))).toBe(
+      "22 de noviembre",
+    );
+  });
+
+  it("builds recent transaction dates as local calendar days, not UTC midnight", () => {
+    const summary = computeDashboardSummary(tzData, "current", {
+      today: todayNoonUtc,
+    });
+    const recent = summary.recentTransactions.find((r) => r.id === "tx-1");
+    // "2026-11-20" must display as 20 nov in any timezone (UTC-6 bug: 19 nov).
+    expect(formatShortDay(recent!.date)).toBe("20 nov");
+    expect(toIsoDateString(recent!.date)).toBe("2026-11-20");
   });
 });

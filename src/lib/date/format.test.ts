@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import {
   dateToMonthIso,
   formatDate,
+  formatDayAndMonth,
   formatMonth,
   formatRelativeDate,
   formatShortDate,
+  formatShortDay,
   monthIsoToDate,
   toIsoDateString,
+  utcDateToLocal,
 } from "./format";
 
 describe("formatDate", () => {
@@ -89,5 +92,32 @@ describe("formatShortDate", () => {
 
   it("accepts an ISO timestamp", () => {
     expect(formatShortDate("2026-12-31T12:00:00Z")).toBe("31/12/2026");
+  });
+});
+
+describe("utcDateToLocal", () => {
+  it("maps an engine UTC-midnight date to the same local calendar day", () => {
+    // The engine (cycle.ts → computeActivePaymentDate) builds dates with
+    // Date.UTC, i.e. midnight UTC: 2026-11-22T00:00:00.000Z.
+    const engineDate = new Date(Date.UTC(2026, 10, 22));
+    const local = utcDateToLocal(engineDate);
+
+    // The local calendar parts carry the engine's intended day in any
+    // timezone, so the assertion is runner-TZ independent.
+    expect(toIsoDateString(local)).toBe("2026-11-22");
+    expect(formatDayAndMonth(local)).toBe("22 de noviembre");
+  });
+
+  it("keeps the visible day for ISO date strings parsed as UTC midnight", () => {
+    // new Date("YYYY-MM-DD") is UTC midnight — the same convention the
+    // engine uses, and the case that rendered one day early in UTC-6.
+    const engineDate = new Date("2026-11-20T00:00:00.000Z");
+    expect(formatShortDay(utcDateToLocal(engineDate))).toBe("20 nov");
+  });
+
+  it("does not mutate the input date", () => {
+    const engineDate = new Date(Date.UTC(2026, 0, 1));
+    utcDateToLocal(engineDate);
+    expect(engineDate.toISOString()).toBe("2026-01-01T00:00:00.000Z");
   });
 });

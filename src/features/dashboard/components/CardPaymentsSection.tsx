@@ -1,7 +1,7 @@
 import { CreditCard } from "lucide-react";
 import { NavLink } from "react-router";
 import { PaperCard, SectionHeading, ListRow, Amount, StatusPill } from "@/components/ui/design";
-import { formatDayAndMonth } from "@/lib/date/format";
+import { formatDayAndMonth, utcDateToLocal } from "@/lib/date/format";
 import type { DashboardSummary } from "../types";
 
 export interface CardPaymentsSectionProps {
@@ -36,8 +36,8 @@ export function CardPaymentsSection({
                 title={row.bank}
                 subtitle={
                   row.isOverdue
-                    ? `Venció el ${formatDayAndMonth(row.paymentDate)}`
-                    : `Vence el ${formatDayAndMonth(row.paymentDate)}`
+                    ? `Venció el ${formatDayAndMonth(utcDateToLocal(row.paymentDate))}`
+                    : `Vence el ${formatDayAndMonth(utcDateToLocal(row.paymentDate))}`
                 }
                 leading={<CreditCard className="size-5" aria-hidden strokeWidth={2} />}
                 trailing={

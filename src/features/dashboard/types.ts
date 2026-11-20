@@ -12,6 +12,10 @@ export interface CardPaymentRow {
   cardId: string;
   bank: string;
   amountCents: number;
+  /**
+   * Engine date at UTC midnight (from `computeActivePaymentDate`).
+   * Convert with `utcDateToLocal` before any local formatting.
+   */
   paymentDate: Date;
   daysUntil: number;
   isOverdue: boolean;
@@ -28,6 +32,7 @@ export interface RecentTransactionRow {
   description: string;
   amountCents: number;
   sign: "positive" | "negative";
+  /** Local-calendar date (parseISO of the stored "YYYY-MM-DD" day) — safe for direct local formatting. */
   date: Date;
   accountName: string;
   category: string | undefined;

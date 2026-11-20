@@ -1,7 +1,7 @@
 import { Clock, ChevronRight } from "lucide-react";
 import { NavLink } from "react-router";
 import { Amount } from "@/components/ui/design";
-import { formatDayAndMonth } from "@/lib/date/format";
+import { formatDayAndMonth, utcDateToLocal } from "@/lib/date/format";
 import type { CardPaymentRow } from "../types";
 
 export interface UrgentNoticeProps {
@@ -30,7 +30,7 @@ export function UrgentNotice({ payment, currency }: UrgentNoticeProps): React.JS
       <span className="flex min-w-0 flex-1 flex-col">
         <span className="text-sm font-bold">{when}</span>
         <span className="text-xs opacity-90">
-          {formatDayAndMonth(paymentDate)}, <Amount cents={amountCents} currency={currency} />
+          {formatDayAndMonth(utcDateToLocal(paymentDate))}, <Amount cents={amountCents} currency={currency} />
         </span>
       </span>
       <ChevronRight className="size-5 shrink-0" aria-hidden strokeWidth={2} />
