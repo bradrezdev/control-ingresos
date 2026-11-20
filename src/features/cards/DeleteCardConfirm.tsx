@@ -1,10 +1,10 @@
 /**
  * DeleteCardConfirm — control-ingresos
  *
- * Destructive-action confirmation modal for card removal. Renders a
- * plain confirmation message and a Cancel/Delete pair. The Delete
- * button is `variant="danger"` and a spinner replaces the label while
- * the store is mutating Dexie.
+ * Destructive-action confirmation modal for card removal. Tells the user
+ * how many transactions of that card will be affected before they
+ * confirm, then removes the card through the store (Dexie keeps the
+ * transactions themselves; they simply lose their card association).
  */
 import { useState } from "react";
 import { Modal } from "@/components/ui/Modal";
@@ -14,11 +14,20 @@ import type { Card } from "@/db/schemas/card";
 
 export interface DeleteCardConfirmProps {
   card: Card | null;
+  /** Transactions associated with the card being deleted. */
+  affectedCount: number;
   onClose: () => void;
+}
+
+function affectedSentence(count: number): string {
+  if (count <= 0) return "No hay transacciones asociadas a esta tarjeta.";
+  if (count === 1) return "1 transacción se verá afectada.";
+  return `${count} transacciones se verán afectadas.`;
 }
 
 export function DeleteCardConfirm({
   card,
+  affectedCount,
   onClose,
 }: DeleteCardConfirmProps): React.JSX.Element {
   const remove = useCardsStore((s) => s.remove);
@@ -43,7 +52,7 @@ export function DeleteCardConfirm({
       size="sm"
       {...(card
         ? {
-            description: `¿Eliminar la tarjeta de ${card.bank}? Esta acción no se puede deshacer.`,
+            description: `¿Eliminar la tarjeta de ${card.bank}? ${affectedSentence(affectedCount)} Esta acción no se puede deshacer.`,
           }
         : {})}
     >

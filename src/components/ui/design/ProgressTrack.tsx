@@ -13,6 +13,8 @@ export interface ProgressTrackProps extends HTMLAttributes<HTMLDivElement> {
   marker?: ProgressTrackMarker;
   /** Track background variant. */
   variant?: "default" | "hero";
+  /** Fill color tone for data-driven bars (default variant only). */
+  tone?: "primary" | "warning" | "danger";
 }
 
 function clamp(value: number): number {
@@ -29,10 +31,20 @@ export function ProgressTrack({
   fill,
   marker,
   variant = "default",
+  tone = "primary",
   className,
   ...props
 }: ProgressTrackProps): React.JSX.Element {
   const clampedFill = clamp(fill);
+
+  const fillClass =
+    variant === "hero"
+      ? "bg-hero-text"
+      : tone === "warning"
+        ? "bg-warning"
+        : tone === "danger"
+          ? "bg-danger"
+          : "bg-primary";
 
   return (
     <div
@@ -50,7 +62,7 @@ export function ProgressTrack({
       <span
         className={cn(
           "absolute left-0 top-0 bottom-0 rounded-full transition-all duration-base ease-out-soft",
-          variant === "hero" ? "bg-hero-text" : "bg-primary",
+          fillClass,
         )}
         style={{ width: `${clampedFill}%` }}
       />

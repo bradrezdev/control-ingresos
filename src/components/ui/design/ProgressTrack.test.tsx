@@ -48,4 +48,28 @@ describe("ProgressTrack", () => {
     const marker = screen.getByText("Hoy").parentElement;
     expect(marker?.lastElementChild).toHaveClass("bg-marker");
   });
+
+  it("colors the fill with the warning token when tone is warning", () => {
+    render(<ProgressTrack fill={70} tone="warning" />);
+    const fill = screen.getByRole("progressbar").querySelector("span");
+    expect(fill).toHaveClass("bg-warning");
+  });
+
+  it("colors the fill with the danger token when tone is danger", () => {
+    render(<ProgressTrack fill={95} tone="danger" />);
+    const fill = screen.getByRole("progressbar").querySelector("span");
+    expect(fill).toHaveClass("bg-danger");
+  });
+
+  it("defaults the fill to the primary token", () => {
+    render(<ProgressTrack fill={30} />);
+    const fill = screen.getByRole("progressbar").querySelector("span");
+    expect(fill).toHaveClass("bg-primary");
+  });
+
+  it("keeps the hero fill white regardless of tone", () => {
+    render(<ProgressTrack fill={30} variant="hero" tone="danger" />);
+    const fill = screen.getByRole("progressbar").querySelector("span");
+    expect(fill).toHaveClass("bg-hero-text");
+  });
 });
