@@ -24,32 +24,20 @@ import { useFixedPaymentsStore } from "@/stores/fixedPaymentsStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { getMsiMonthlyAmount } from "@/engine/msi";
 import { formatCurrency } from "@/lib/money/format";
+import { METHOD_LABEL, PERIOD_LABEL } from "./types";
 import type { FixedPayment } from "@/db/schemas/fixedPayment";
-
-const PERIOD_LABELS: Record<FixedPayment["period"], string> = {
-  monthly: "Mensual",
-  bimonthly: "Bimestral",
-  quarterly: "Trimestral",
-};
-
-const METHOD_LABELS: Record<FixedPayment["paymentMethod"], string> = {
-  cash: "Efectivo",
-  debit: "Débito",
-  credit: "Crédito",
-  transfer: "Transferencia",
-};
 
 const fixedPaymentFormSchema = z
   .object({
     amount: z
-      .number({ error: "Ingresá un monto válido" })
+      .number({ error: "Ingresa un monto válido" })
       .positive("El monto debe ser positivo"),
     description: z
       .string()
-      .min(1, "Ingresá una descripción")
+      .min(1, "Ingresa una descripción")
       .max(120, "Máximo 120 caracteres"),
     paymentDay: z
-      .number({ error: "Ingresá un día entre 1 y 31" })
+      .number({ error: "Ingresa un día entre 1 y 31" })
       .int("Debe ser entero")
       .min(1, "Mínimo 1")
       .max(31, "Máximo 31"),
@@ -67,7 +55,7 @@ const fixedPaymentFormSchema = z
       ctx.addIssue({
         path: ["cardId"],
         code: "custom",
-        message: "Seleccioná una tarjeta",
+        message: "Selecciona una tarjeta",
       });
     }
     if (data.paymentMethod !== "credit" && data.msiMonths !== undefined) {
@@ -82,12 +70,12 @@ const fixedPaymentFormSchema = z
 type FixedPaymentFormValues = z.infer<typeof fixedPaymentFormSchema>;
 
 const PERIOD_OPTIONS = (
-  Object.keys(PERIOD_LABELS) as FixedPayment["period"][]
-).map((p) => ({ value: p, label: PERIOD_LABELS[p] }));
+  Object.keys(PERIOD_LABEL) as FixedPayment["period"][]
+).map((p) => ({ value: p, label: PERIOD_LABEL[p] }));
 
 const METHOD_OPTIONS = (
-  Object.keys(METHOD_LABELS) as FixedPayment["paymentMethod"][]
-).map((m) => ({ value: m, label: METHOD_LABELS[m] }));
+  Object.keys(METHOD_LABEL) as FixedPayment["paymentMethod"][]
+).map((m) => ({ value: m, label: METHOD_LABEL[m] }));
 
 const MSI_OPTIONS = Array.from({ length: 48 }, (_, i) => i + 1).map((n) => ({
   value: String(n),
@@ -95,7 +83,7 @@ const MSI_OPTIONS = Array.from({ length: 48 }, (_, i) => i + 1).map((n) => ({
 }));
 
 export interface FixedPaymentFormProps {
-  fixedPayment?: FixedPayment;
+  fixedPayment?: FixedPayment | undefined;
   onSaved: () => void;
   onCancel: () => void;
 }
@@ -179,7 +167,7 @@ export function FixedPaymentForm({
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="fp-amount"
-          className="text-sm font-medium text-[var(--color-text-body)]"
+          className="text-sm font-medium text-ink"
         >
           Monto
         </label>
@@ -193,7 +181,7 @@ export function FixedPaymentForm({
           invalid={!!errors.amount}
         />
         {errors.amount ? (
-          <p role="alert" className="text-xs text-[var(--color-danger)]">
+          <p role="alert" className="text-xs text-danger">
             {errors.amount.message}
           </p>
         ) : null}
@@ -202,7 +190,7 @@ export function FixedPaymentForm({
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="fp-description"
-          className="text-sm font-medium text-[var(--color-text-body)]"
+          className="text-sm font-medium text-ink"
         >
           Descripción
         </label>
@@ -214,7 +202,7 @@ export function FixedPaymentForm({
           {...register("description")}
         />
         {errors.description ? (
-          <p role="alert" className="text-xs text-[var(--color-danger)]">
+          <p role="alert" className="text-xs text-danger">
             {errors.description.message}
           </p>
         ) : null}
@@ -224,7 +212,7 @@ export function FixedPaymentForm({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="fp-payment-day"
-            className="text-sm font-medium text-[var(--color-text-body)]"
+            className="text-sm font-medium text-ink"
           >
             Día del mes
           </label>
@@ -237,7 +225,7 @@ export function FixedPaymentForm({
             {...register("paymentDay", { valueAsNumber: true })}
           />
           {errors.paymentDay ? (
-            <p role="alert" className="text-xs text-[var(--color-danger)]">
+            <p role="alert" className="text-xs text-danger">
               {errors.paymentDay.message}
             </p>
           ) : null}
@@ -245,7 +233,7 @@ export function FixedPaymentForm({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="fp-period"
-            className="text-sm font-medium text-[var(--color-text-body)]"
+            className="text-sm font-medium text-ink"
           >
             Período
           </label>
@@ -268,10 +256,10 @@ export function FixedPaymentForm({
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="fp-category"
-          className="text-sm font-medium text-[var(--color-text-body)]"
+          className="text-sm font-medium text-ink"
         >
           Categoría{" "}
-          <span className="text-[var(--color-text-muted)] font-normal">
+          <span className="text-muted font-normal">
             (opcional)
           </span>
         </label>
@@ -287,7 +275,7 @@ export function FixedPaymentForm({
       <div className="flex flex-col gap-1.5">
         <label
           htmlFor="fp-method"
-          className="text-sm font-medium text-[var(--color-text-body)]"
+          className="text-sm font-medium text-ink"
         >
           Método de pago
         </label>
@@ -304,7 +292,7 @@ export function FixedPaymentForm({
           }
         />
         {errors.paymentMethod ? (
-          <p role="alert" className="text-xs text-[var(--color-danger)]">
+          <p role="alert" className="text-xs text-danger">
             {errors.paymentMethod.message}
           </p>
         ) : null}
@@ -315,7 +303,7 @@ export function FixedPaymentForm({
         <div className="flex flex-col gap-1.5">
           <label
             htmlFor="fp-card"
-            className="text-sm font-medium text-[var(--color-text-body)]"
+            className="text-sm font-medium text-ink"
           >
             Tarjeta de débito
           </label>
@@ -329,7 +317,7 @@ export function FixedPaymentForm({
             invalid={!!errors.cardId}
           />
           {errors.cardId ? (
-            <p role="alert" className="text-xs text-[var(--color-danger)]">
+            <p role="alert" className="text-xs text-danger">
               {errors.cardId.message}
             </p>
           ) : null}
@@ -341,7 +329,7 @@ export function FixedPaymentForm({
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="fp-card"
-              className="text-sm font-medium text-[var(--color-text-body)]"
+              className="text-sm font-medium text-ink"
             >
               Tarjeta de crédito
             </label>
@@ -355,7 +343,7 @@ export function FixedPaymentForm({
               invalid={!!errors.cardId}
             />
             {errors.cardId ? (
-              <p role="alert" className="text-xs text-[var(--color-danger)]">
+              <p role="alert" className="text-xs text-danger">
                 {errors.cardId.message}
               </p>
             ) : null}
@@ -363,10 +351,10 @@ export function FixedPaymentForm({
           <div className="flex flex-col gap-1.5">
             <label
               htmlFor="fp-msi"
-              className="text-sm font-medium text-[var(--color-text-body)]"
+              className="text-sm font-medium text-ink"
             >
               Meses sin intereses{" "}
-              <span className="text-[var(--color-text-muted)] font-normal">
+              <span className="text-muted font-normal">
                 (opcional)
               </span>
             </label>
@@ -384,14 +372,14 @@ export function FixedPaymentForm({
               }}
             />
             {errors.msiMonths ? (
-              <p role="alert" className="text-xs text-[var(--color-danger)]">
+              <p role="alert" className="text-xs text-danger">
                 {errors.msiMonths.message}
               </p>
             ) : null}
             {monthlyPreview !== null && watchedMsiMonths ? (
-              <p className="text-xs text-[var(--color-text-muted)]">
+              <p className="text-xs text-muted">
                 Cuota mensual:{" "}
-                <strong className="text-[var(--color-text-body)]">
+                <strong className="text-ink">
                   {formatCurrency(monthlyPreview, currency)}
                 </strong>{" "}
                 durante {watchedMsiMonths} meses.
@@ -402,7 +390,7 @@ export function FixedPaymentForm({
         </>
       ) : null}
 
-      <div className="flex justify-end gap-2 pt-2 border-t border-[var(--color-border-subtle)]">
+      <div className="flex justify-end gap-2 pt-2 border-t border-border-subtle">
         <Button
           type="button"
           variant="ghost"

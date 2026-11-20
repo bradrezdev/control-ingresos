@@ -1,24 +1,21 @@
 /**
- * FixedPayments — control-ingresos
+ * FixedPayments — control-ingresos (redesign, T6)
  *
- * F5.3 (replacement) — Manage fixed (recurring) payments. Top-level
- * page that:
- *   1. Shows the live list of fixed payments.
- *   2. Hosts a Drawer with `FixedPaymentForm` for create/edit.
- *   3. Hosts a Modal for delete confirmation.
+ * Thin page that mounts the redesigned Pagos fijos screen and owns its
+ * sheets: the create/edit form, the fixed payment detail (with the
+ * Editar / Eliminar actions) and the delete confirmation.
  *
- * The page keeps ephemeral UI state (which payment is being edited /
- * deleted / created) in local state. Dexie is the source of truth for
- * the data; `useLiveFixedPayments` reflects writes.
+ * Every handler passed to `Drawer`/`Modal` is a stable `useCallback`
+ * reference — those components re-run their focus effect when the
+ * `onClose` identity changes, which steals focus from inputs on each
+ * keystroke (defect already seen in T4).
  */
-import { useState } from "react";
-import { Plus } from "lucide-react";
-import { PageContainer } from "@/components/layout/PageContainer";
-import { SettingsButton } from "@/components/ui/design";
-import { Button } from "@/components/ui/Button";
+import { useCallback, useState } from "react";
 import { Drawer } from "@/components/ui/Drawer";
-import { FixedPaymentList } from "@/features/fixedPayments/FixedPaymentList";
+import { useLiveSettings } from "@/hooks/useLiveSettings";
+import { FixedPaymentsScreen } from "@/features/fixedPayments/FixedPaymentsScreen";
 import { FixedPaymentForm } from "@/features/fixedPayments/FixedPaymentForm";
+import { FixedPaymentDetail } from "@/features/fixedPayments/FixedPaymentDetail";
 import { DeleteFixedPaymentConfirm } from "@/features/fixedPayments/DeleteFixedPaymentConfirm";
 import type { FixedPayment } from "@/db/schemas/fixedPayment";
 
@@ -27,41 +24,43 @@ type DrawerMode = "closed" | "create" | "edit";
 export function FixedPayments(): React.JSX.Element {
   const [drawer, setDrawer] = useState<DrawerMode>("closed");
   const [editing, setEditing] = useState<FixedPayment | null>(null);
+  const [detail, setDetail] = useState<FixedPayment | null>(null);
   const [deleting, setDeleting] = useState<FixedPayment | null>(null);
 
-  function openCreate(): void {
+  const settings = useLiveSettings();
+  const currency = settings?.currency ?? "MXN";
+
+  const openCreate = useCallback(() => {
     setEditing(null);
     setDrawer("create");
-  }
+  }, []);
 
-  function openEdit(fp: FixedPayment): void {
+  const openDetail = useCallback((fp: FixedPayment) => {
+    setDetail(fp);
+  }, []);
+
+  const openEdit = useCallback((fp: FixedPayment) => {
+    setDetail(null);
     setEditing(fp);
     setDrawer("edit");
-  }
+  }, []);
 
-  function closeDrawer(): void {
+  const openDelete = useCallback((fp: FixedPayment) => {
+    setDetail(null);
+    setDeleting(fp);
+  }, []);
+
+  // Stable closers — see the module doc.
+  const closeDrawer = useCallback(() => {
     setDrawer("closed");
     setEditing(null);
-  }
+  }, []);
+  const closeDetail = useCallback(() => setDetail(null), []);
+  const closeDeleting = useCallback(() => setDeleting(null), []);
 
   return (
-    <PageContainer
-      title="Pagos fijos"
-      actions={
-        <>
-          <Button
-            type="button"
-            variant="primary"
-            leftIcon={<Plus className="size-4" aria-hidden />}
-            onClick={openCreate}
-          >
-            Nuevo pago fijo
-          </Button>
-          <SettingsButton />
-        </>
-      }
-    >
-      <FixedPaymentList onEdit={openEdit} onDelete={setDeleting} />
+    <>
+      <FixedPaymentsScreen onCreate={openCreate} onSelect={openDetail} />
 
       <Drawer
         open={drawer !== "closed"}
@@ -69,28 +68,36 @@ export function FixedPayments(): React.JSX.Element {
         title={drawer === "edit" ? "Editar pago fijo" : "Nuevo pago fijo"}
         description={
           drawer === "edit"
-            ? "Modificá los datos del pago recurrente."
-            : "Registrá un gasto que se repite cada cierto período."
+            ? "Modifica los datos del pago recurrente."
+            : "Registra un gasto que se repite cada cierto período."
         }
       >
-        {editing ? (
-          <FixedPaymentForm
-            fixedPayment={editing}
-            onSaved={closeDrawer}
-            onCancel={closeDrawer}
+        <FixedPaymentForm
+          fixedPayment={editing ?? undefined}
+          onSaved={closeDrawer}
+          onCancel={closeDrawer}
+        />
+      </Drawer>
+
+      <Drawer
+        open={detail !== null}
+        onClose={closeDetail}
+        title={detail?.description ?? ""}
+      >
+        {detail ? (
+          <FixedPaymentDetail
+            fixedPayment={detail}
+            currency={currency}
+            onEdit={openEdit}
+            onDelete={openDelete}
           />
-        ) : (
-          <FixedPaymentForm
-            onSaved={closeDrawer}
-            onCancel={closeDrawer}
-          />
-        )}
+        ) : null}
       </Drawer>
 
       <DeleteFixedPaymentConfirm
         fixedPayment={deleting}
-        onClose={() => setDeleting(null)}
+        onClose={closeDeleting}
       />
-    </PageContainer>
+    </>
   );
 }
