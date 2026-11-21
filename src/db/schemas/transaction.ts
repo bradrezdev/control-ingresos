@@ -47,6 +47,18 @@ export const MsiExpenseSchema = BaseTransaction.extend({
   cardId: z.uuid(),
   msiMonths: MsiMonths,
   msiStartDate: z.iso.date(),
+  /**
+   * Regla de redondeo del plan:
+   *   - `last`: el residuo de centavos va a la última cuota (regla
+   *     histórica de la app; valor por defecto cuando el campo falta).
+   *   - `first`: el residuo va a la primera cuota (planes importados de
+   *     un respaldo que usaba esa regla).
+   *   - `spread`: un centavo extra a cada una de las primeras cuotas
+   *     hasta agotar el residuo (planes nuevos).
+   *
+   * La suma de las cuotas siempre recupera el importe original.
+   */
+  msiPlanRule: z.enum(['last', 'first', 'spread']).optional(),
 });
 
 export const TransactionSchema = z.discriminatedUnion('type', [

@@ -15,6 +15,8 @@
  * issuers. Easy to extend: add an entry and the rest of the UI picks it
  * up automatically.
  */
+import { CARD_FINISHES, type CardFinish } from "@/lib/cards/skin";
+
 export type BankTintKey =
   | "default"
   | "bbva"
@@ -27,34 +29,25 @@ export type BankTintKey =
   | "inbursa";
 
 /**
- * Flat face palette for the card block. Hex values are allowed only
- * here (documented prototype skins); components must consume them via
- * `tintFor`, never inline.
+ * Flat face palette for the card block. The four prototype finishes live
+ * in `src/lib/cards/skin.ts` (single source of truth, shared with the
+ * schema and the migration).
  */
-export interface BankFace {
-  /** Flat face background. */
-  bg: string;
-  /** Primary text on the face (card name). */
-  ink: string;
-  /** Face border. */
-  edge: string;
-  /** Secondary text on the face (holder, type label). */
-  muted: string;
-}
+export type { CardFinish };
 
 export interface BankTint {
   bar: string;
   label: string;
-  face: BankFace;
+  face: CardFinish;
 }
 
 /** Prototype skins (`wallet.css` `.skin-*`) — sober, flat, contrast-safe. */
 const SKINS = {
-  silver: { bg: "#dce3e9", ink: "#283944", edge: "#c3cfd5", muted: "#455561" },
-  ocean: { bg: "#8bcfe7", ink: "#112e48", edge: "#79bad6", muted: "#25475e" },
-  forest: { bg: "#184d46", ink: "#eefcf2", edge: "#26635a", muted: "#c1e2d9" },
-  ink: { bg: "#233c63", ink: "#eff4ff", edge: "#3c547b", muted: "#c9d8ec" },
-} as const satisfies Record<string, BankFace>;
+  silver: CARD_FINISHES.silver,
+  ocean: CARD_FINISHES.ocean,
+  forest: CARD_FINISHES.forest,
+  ink: CARD_FINISHES.ink,
+} as const satisfies Record<string, CardFinish>;
 
 export const BANK_TINT: Record<BankTintKey, BankTint> = {
   default: { bar: "border-l-[var(--color-primary)]", label: "Tarjeta", face: SKINS.ink },

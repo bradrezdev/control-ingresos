@@ -1,8 +1,9 @@
 import Dexie, { type EntityTable } from 'dexie';
 import type { Transaction } from './schemas/transaction';
-import type { Card } from './schemas/card';
+import type { Card, CardSkin } from './schemas/card';
 import type { FixedPayment } from './schemas/fixedPayment';
 import type { Settings } from './schemas/settings';
+import { skinForBank } from '@/lib/cards/skin';
 
 export class ControlIngresosDB extends Dexie {
   transactions!: EntityTable<Transaction, 'id'>;
@@ -76,6 +77,45 @@ export class ControlIngresosDB extends Dexie {
           .modify((raw: unknown) => {
             const c = raw as { cardType?: 'debit' | 'credit' };
             if (!c.cardType) c.cardType = 'credit';
+          });
+      });
+    // v4: card finish + archive flag, MSI plan rounding rule.
+    // - Cards get `skin` (visual finish, backfilled from the issuer name)
+    //   and `archived` (false for every existing card: nothing is hidden
+    //   from the user without them asking for it).
+    // - MSI transactions get `msiPlanRule='last'`, the rule the app has
+    //   always used, so existing plans keep their exact amounts.
+    this.version(4)
+      .stores({
+        transactions:
+          'id, type, date, cardId, [type+date], [cardId+date]',
+        cards: 'id, bank, priority, createdAt',
+        fixedPayments: 'id, period, paymentDay, createdAt',
+        settings: 'id',
+      })
+      .upgrade(async (tx) => {
+        await tx
+          .table('cards')
+          .toCollection()
+          .modify((raw: unknown) => {
+            const c = raw as {
+              bank?: string;
+              skin?: CardSkin;
+              archived?: boolean;
+            };
+            if (c.archived === undefined) c.archived = false;
+            if (c.skin === undefined && typeof c.bank === 'string') {
+              c.skin = skinForBank(c.bank);
+            }
+          });
+        await tx
+          .table('transactions')
+          .toCollection()
+          .modify((raw: unknown) => {
+            const t = raw as { type?: string; msiPlanRule?: string };
+            if (t.type === 'expense_msi' && t.msiPlanRule === undefined) {
+              t.msiPlanRule = 'last';
+            }
           });
       });
   }

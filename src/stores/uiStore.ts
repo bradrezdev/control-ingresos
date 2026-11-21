@@ -26,6 +26,8 @@ export interface UiState {
   theme: Theme;
   currentMonth: string;
   installPromptDismissed: boolean;
+  /** Tarjeta seleccionada en la cartera (persistido entre visitas). */
+  selectedCardId: string | null;
 
   toggleSidebar: () => void;
   setSidebarOpen: (open: boolean) => void;
@@ -33,6 +35,7 @@ export interface UiState {
   setTheme: (theme: Theme) => void;
   setCurrentMonth: (month: string) => void;
   setInstallPromptDismissed: (dismissed: boolean) => void;
+  setSelectedCardId: (cardId: string | null) => void;
 }
 
 const currentMonthNow = (): string => {
@@ -48,6 +51,7 @@ export const useUiStore = create<UiState>()(
       theme: "system",
       currentMonth: currentMonthNow(),
       installPromptDismissed: false,
+      selectedCardId: null,
 
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
@@ -55,6 +59,7 @@ export const useUiStore = create<UiState>()(
       setTheme: (theme) => set({ theme }),
       setCurrentMonth: (month) => set({ currentMonth: month }),
       setInstallPromptDismissed: (dismissed) => set({ installPromptDismissed: dismissed }),
+      setSelectedCardId: (cardId) => set({ selectedCardId: cardId }),
     }),
     {
       name: "control-ingresos-ui",
@@ -65,6 +70,7 @@ export const useUiStore = create<UiState>()(
         theme: state.theme,
         currentMonth: state.currentMonth,
         installPromptDismissed: state.installPromptDismissed,
+        selectedCardId: state.selectedCardId,
       }),
     },
   ),
