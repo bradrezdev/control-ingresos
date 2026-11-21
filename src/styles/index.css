@@ -290,6 +290,30 @@
   --shadow-nav: 0 7px 32px rgb(16 36 73 / 0.14);
 }
 
+/*
+ * Resumen principal de Tarjetas (DESIGN-RULES §4): relleno 10·20·20 y,
+ * hasta 345 px de viewport, 8·16·16. Las celdas con importe ("Usado
+ * estimado" y "Límite total") bajan a 15 px en ese mismo umbral para
+ * que el importe completo siga leyéndose.
+ */
+.wallet-hero {
+  padding: 10px 20px 20px;
+}
+
+.wallet-hero-tile-value {
+  font-size: var(--text-lg);
+}
+
+@media (max-width: 345px) {
+  .wallet-hero {
+    padding: 8px 16px 16px;
+  }
+
+  .wallet-hero-tile-value {
+    font-size: var(--text-base);
+  }
+}
+
 /* ---------------------------------------------------------------------------
  * Explicit DARK — user forced dark regardless of OS preference.
  * Canonical palette from REDESIGN.md.

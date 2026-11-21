@@ -123,9 +123,9 @@ Columna 390 px · interior 14 px arriba / 16 px laterales · separación 14 px e
 
 | ID | Specs | Unidad | Route | Estado |
 | --- | --- | --- | --- | --- |
-| T1 | S4, S5, S16 | Modelo + motor: campos de tarjeta (acabado, archivada), migración, repo, funciones puras de crédito/ciclo/pago previsto/MSI + tests | Inline (padre) | hecha |
-| T2 | S8 (1-4), S9, S10, S11 | Pantalla Tarjetas: encabezado, alerta, resumen de crédito, "Mi cartera" con selector y plástico | Inline (padre) | hecha |
-| T3 | S8 (5-7), S17 | "Próximos pagos", "Compras a meses", pie con archivadas, estados vacío/error | Inline (padre) | hecha |
+| T1 | S4, S5, S16 | Modelo + motor: campos de tarjeta (acabado, archivada), migración, repo, funciones puras de crédito/ciclo/pago previsto/MSI + tests | Inline (padre) | hecha · `cf0962c` |
+| T2 | S8 (1-4), S9, S10, S11 | Pantalla Tarjetas: encabezado, alerta, resumen de crédito, "Mi cartera" con selector y plástico | Inline (padre) | hecha · `ab1e10e` |
+| T3 | S8 (5-7), S17 | "Próximos pagos", "Compras a meses", pie con archivadas, estados vacío/error | Inline (padre) | hecha · `ab1e10e` |
 | T4 | S13, S14, S15 | Hojas: ficha de tarjeta (3 pestañas), detalle de vencimiento, "Cómo se estima el crédito", reordenar, formulario nueva tarjeta | delegada | pendiente |
 | T5 | S13, S14, S12 | Pantalla "Compras a meses" con filtros de plazo, gestos, teclado y enlaces profundos | delegada | pendiente |
 | T6 | S19, S20 | Verificación: respaldo de demostración, pruebas de aceptación, revisión visual 320/387/390 px | Inline (padre) | en curso |
@@ -144,4 +144,5 @@ Columna 390 px · interior 14 px arriba / 16 px laterales · separación 14 px e
 - **L6 (2026-11-20)** — Ronda de fidelidad contra la referencia (medida con Playwright, no a ojo): plástico de 318×201 con relleno 15 px y radio 16 px; marca con la caja de cada emisor (`PLΛTΛ` a `clamp(1.45rem,13.1cqw,2.85rem)` / 630 / `0.055em`, "mercado pago" a dos líneas, "stori"); chip EMV dorado de la referencia (`clamp(26px,11cqw,38px)`); trama con los mismos trazos por acabado; chips del selector con fondo de página y 13 px; "Ver las N" en el encabezado de "Compras a meses"; barra individual de 7 px sobre el color de separador y fila de uso en dos columnas ("Usado 13 %" / "$3 207.82 de $25 500.00"); pictograma de Ajustes con filtros en vez de engranaje; resumen azul marino fijo `#0B2B66` en ambos temas (token nuevo `--color-wallet-hero`, sin redefinir en oscuro).
 - **L7 (2026-11-20)** — Verificación de T1-T3: `npm run test` 566 pruebas (84 archivos) en verde, `npm run typecheck`, `npm run lint` (0 avisos) y `npm run build` en verde. Con la semilla de demostración, la pantalla reproduce **exactamente** las cifras de C6: cartera $52 071.34 disponibles / $39 228.66 usados / $91 300.00 de límite / 43 %; PLATA $22 292.18 (13 %), Mercado Pago $17 779.16; próximos pagos PLATA $458.26 (22 nov, 2 d), Stori $5 768.00 (5 dic, 15 d), Mercado Pago $10 230.32 (8 dic, 18 d); 8 compras MSI con "Galaxy S26 Papá" en $14 101.04 y 19 cuotas por cubrir. Capturas Playwright a 390 y 360 px en claro y oscuro, sin desbordamiento horizontal (`overflowX = 0`).
 - **L8 (2026-11-20)** — Pendiente: T4 (hojas: ficha de tarjeta, detalle de vencimiento, "Cómo se estima el crédito", reordenar, formulario) y T5 (pantalla "Compras a meses" con filtros de plazo) siguen abiertas; T6 cierra cuando existan las capturas a 320 y 387 px y la verificación de los enlaces profundos.
+- **L9 (2026-11-20)** — Entrega en dos unidades revisables: `cf0962c` (motor + modelo) y `ab1e10e` (pantalla). Evaluación nativa de riesgo sobre el tramo `77753b8…ab1e10e`: `risk: medium`, `review_due: false` (`under_budget`), sin revisión externa pendiente en este tramo.
 
