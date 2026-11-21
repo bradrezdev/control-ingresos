@@ -12,6 +12,11 @@ const Transactions = lazy(() =>
 const Cards = lazy(() =>
   import("@/pages/Cards").then((m) => ({ default: m.Cards })),
 );
+const MsiPurchases = lazy(() =>
+  import("@/pages/MsiPurchases").then((m) => ({
+    default: m.MsiPurchases,
+  })),
+);
 const FixedPayments = lazy(() =>
   import("@/pages/FixedPayments").then((m) => ({ default: m.FixedPayments })),
 );
@@ -77,6 +82,14 @@ export const router = createBrowserRouter([
         element: (
           <LazyPage>
             <Cards />
+          </LazyPage>
+        ),
+      },
+      {
+        path: "cards/msi",
+        element: (
+          <LazyPage>
+            <MsiPurchases />
           </LazyPage>
         ),
       },
