@@ -38,7 +38,7 @@ export const CardSchema = z
     holderName: z.string().min(1).max(80),
     cardType: z.enum(['debit', 'credit']).default('credit'),
     cutDay: z.number().int().min(1).max(31).optional(),
-    daysToPayAfterCut: z.number().int().min(1).max(62).optional(),
+    daysToPayAfterCut: z.number().int().min(1).max(90).optional(),
     creditLimit: z.number().positive().optional(),
     priority: z.number().int().default(0),
     /**

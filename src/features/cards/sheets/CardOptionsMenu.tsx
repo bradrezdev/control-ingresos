@@ -9,7 +9,7 @@
  * hoja abrir.
  */
 import { CreditCard, Pencil, Trash2 } from "lucide-react";
-import { Drawer } from "@/components/ui/Drawer";
+import { Sheet } from "@/components/ui/design";
 import { cn } from "@/lib/cn";
 import type { Card } from "@/db/schemas";
 
@@ -81,7 +81,7 @@ export function CardOptionsMenu({
   onArchive,
 }: CardOptionsMenuProps): React.JSX.Element {
   return (
-    <Drawer open onClose={onClose} title={card.bank}>
+    <Sheet open onClose={onClose} title={card.bank}>
       <div className="flex flex-col">
         <MenuRow
           icon={<CreditCard className="size-5" strokeWidth={2} />}
@@ -121,6 +121,6 @@ export function CardOptionsMenu({
           danger
         />
       </div>
-    </Drawer>
+    </Sheet>
   );
 }

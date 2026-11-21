@@ -25,6 +25,9 @@ export type { ScreenHeaderProps } from "./ScreenHeader";
 export { SectionHeading } from "./SectionHeading";
 export type { SectionHeadingProps } from "./SectionHeading";
 
+export { Sheet } from "./Sheet";
+export type { SheetProps } from "./Sheet";
+
 export { SettingsButton } from "./SettingsButton";
 
 export { SegmentedControl } from "./SegmentedControl";
