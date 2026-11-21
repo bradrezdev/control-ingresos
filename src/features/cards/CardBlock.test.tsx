@@ -140,9 +140,37 @@ describe("CardBlock", () => {
     expect(screen.getByText("Corte")).toBeInTheDocument();
     expect(screen.getByText("Día 17")).toBeInTheDocument();
     expect(screen.getByText("Pago")).toBeInTheDocument();
+    // The payment date renders both formats; the container query picks
+    // "7 de diciembre" on normal cards and "7 dic" when the card is too
+    // narrow (REDESIGN §Fase 3 punto 4 / T8 fix D).
+    expect(screen.getByText("7 de diciembre")).toBeInTheDocument();
+    expect(screen.getByText("7 dic")).toBeInTheDocument();
     expect(screen.getByText("En 17 días")).toBeInTheDocument();
     expect(screen.getByText("Disponible")).toBeInTheDocument();
     expect(screen.getByText("$7,000.00")).toBeInTheDocument();
+  });
+
+  it("reserves the data row for the three columns and breaks nothing mid-word", () => {
+    renderBlock(
+      makeAccount(baseCard, [expense("tx", "2026-11-05", 300_000)]),
+    );
+    // Rótulo 13 muted + valor 15/600, all on single lines.
+    expect(screen.getByText("Día 17")).toHaveClass("whitespace-nowrap");
+    expect(screen.getByText("7 de diciembre").parentElement).toHaveClass(
+      "whitespace-nowrap",
+    );
+    expect(screen.getByText("$7,000.00")).toHaveClass("whitespace-nowrap");
+    expect(screen.getByText("En 17 días").closest("span")).toHaveClass(
+      "whitespace-nowrap",
+    );
+    // The 44px affordances (drag handle, options) live in their own row;
+    // the cycle row holds exactly the three data columns.
+    const handle = screen.getByLabelText("Arrastrar para reordenar");
+    const options = screen.getByRole("button", { name: "Opciones de PLATA" });
+    const cellsRow = screen.getByText("Corte").closest("div")!.parentElement!;
+    expect(cellsRow.contains(handle)).toBe(false);
+    expect(cellsRow.contains(options)).toBe(false);
+    expect(cellsRow.childElementCount).toBe(3);
   });
 
   it("says Sin límite when a credit card has no registered limit", () => {
@@ -191,7 +219,7 @@ describe("CardBlock", () => {
     expect(screen.queryByText("Disponible")).not.toBeInTheDocument();
   });
 
-  it("exposes a 44px drag handle inside the data row", () => {
+  it("exposes a 44px drag handle", () => {
     renderBlock(makeAccount(baseCard, []));
     const handle = screen.getByLabelText("Arrastrar para reordenar");
     expect(handle).toBeInTheDocument();

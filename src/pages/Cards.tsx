@@ -173,7 +173,7 @@ function MenuRow({ icon, label, danger, onClick }: MenuRowProps): React.JSX.Elem
       >
         {icon}
       </span>
-      <span className="flex-1 text-[15px] font-semibold">{label}</span>
+      <span className="flex-1 text-body font-semibold">{label}</span>
     </button>
   );
 }

@@ -1,7 +1,11 @@
 /**
- * Settings — control-ingresos
+ * Settings — control-ingresos (redesign-ui-2026, T8)
  *
- * F5.1 — Form for monthly spending limit and currency.
+ * Redesigned settings screen (REDESIGN §Fase 4 "Ajustes"): a back button
+ * in the header, sections in PaperCards (Apariencia, Presupuesto y moneda,
+ * Respaldo) and the save CTA that is gray/disabled with secondary text
+ * while there are no pending changes, primary when the form is dirty, and
+ * confirms with "Cambios guardados" after saving.
  *
  * Uses react-hook-form + zodResolver. The store is the write-through
  * proxy to Dexie; on submit we update the singleton via
@@ -11,26 +15,25 @@
  * Form values are derived from `useLiveSettings` (Dexie reactive). On
  * mount, if the live query is still loading, we show a skeleton. After
  * data arrives, the form is `reset()` so the user sees the current
- * persisted values. Submit is disabled until the form is dirty.
+ * persisted values.
  */
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Check } from "lucide-react";
+import { motion } from "motion/react";
 import { PageContainer } from "@/components/layout/PageContainer";
-import { ScreenHeader } from "@/components/ui/design";
-import { GlassCard } from "@/components/ui/GlassCard";
-import { Button } from "@/components/ui/Button";
+import { PaperCard, ScreenHeader, SectionHeading } from "@/components/ui/design";
 import { Select } from "@/components/ui/Select";
 import { ThemeToggle } from "@/components/ui/ThemeToggle";
 import { CurrencyInput } from "@/components/form/CurrencyInput";
 import { Skeleton } from "@/components/ui/Skeleton";
-import { motion } from "motion/react";
 import { fadeIn } from "@/components/motion/variants";
 import { useLiveSettings } from "@/hooks/useLiveSettings";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { centsToDisplay } from "@/lib/money/format";
+import { cn } from "@/lib/cn";
 import { BackupSection } from "@/features/backup";
 
 const CURRENCY_OPTIONS: Array<{ value: string; label: string }> = [
@@ -45,7 +48,7 @@ const CURRENCY_OPTIONS: Array<{ value: string; label: string }> = [
 
 const settingsSchema = z.object({
   monthlyLimit: z
-    .number({ error: "Ingresá un monto válido" })
+    .number({ error: "Ingresa un monto válido" })
     .nonnegative("El límite no puede ser negativo")
     .finite("El límite debe ser un número válido"),
   currency: z.string().length(3, "Código de moneda inválido"),
@@ -108,7 +111,7 @@ export function Settings(): React.JSX.Element {
   if (!live) {
     return (
       <PageContainer bare>
-        <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-3.5">
           <ScreenHeader
             title="Ajustes"
             back={{ to: "/", label: "Volver" }}
@@ -124,129 +127,130 @@ export function Settings(): React.JSX.Element {
     );
   }
 
+  // Gray with secondary text only while there is nothing to save; primary
+  // as soon as the form is dirty (REDESIGN §Fase 4 "Ajustes").
+  const saveDisabled = !isDirty || submitting;
+
   return (
     <PageContainer bare>
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-3.5">
         <ScreenHeader
           title="Ajustes"
           back={{ to: "/", label: "Volver" }}
         />
-        <div className="space-y-6">
-          <GlassCard className="p-6 md:p-8">
-            <header className="mb-5">
-              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-                Apariencia
-              </h2>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                Elegí el tema visual de la aplicación.
-              </p>
-            </header>
+
+        <PaperCard className="p-5">
+          <SectionHeading title="Apariencia" />
+          <p className="mt-1 text-aux text-muted">
+            Elige el tema visual de la aplicación.
+          </p>
+          <div className="mt-3">
             <ThemeToggle size="md" />
-          </GlassCard>
+          </div>
+        </PaperCard>
 
-          <GlassCard className="p-6 md:p-8">
-            <header className="mb-5">
-              <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-                Presupuesto y moneda
-              </h2>
-              <p className="text-xs text-[var(--color-text-muted)] mt-1">
-                Definí tu límite mensual y la moneda de los montos.
-              </p>
-            </header>
-            <form
-              onSubmit={handleSubmit(onSubmit)}
-              className="space-y-6"
-              noValidate
-            >
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="monthlyLimit"
-                  className="text-sm font-medium text-[var(--color-text-body)]"
+        <PaperCard className="p-5">
+          <SectionHeading title="Presupuesto y moneda" />
+          <p className="mt-1 text-aux text-muted">
+            Define tu límite mensual y la moneda de los montos.
+          </p>
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="mt-4 space-y-5"
+            noValidate
+          >
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="monthlyLimit"
+                className="text-sm font-medium text-[var(--color-text-body)]"
+              >
+                Límite mensual
+              </label>
+              <CurrencyInput
+                id="monthlyLimit"
+                value={Math.round((watchedMonthlyLimit ?? 0) * 100)}
+                currency={watchedCurrency || live.currency}
+                onChangeCents={(cents) =>
+                  setValue("monthlyLimit", cents / 100, { shouldDirty: true })
+                }
+                invalid={!!errors.monthlyLimit}
+              />
+              {errors.monthlyLimit ? (
+                <p
+                  role="alert"
+                  className="text-xs text-[var(--color-danger)] mt-1"
                 >
-                  Límite mensual
-                </label>
-                <CurrencyInput
-                  id="monthlyLimit"
-                  value={Math.round((watchedMonthlyLimit ?? 0) * 100)}
-                  currency={watchedCurrency || live.currency}
-                  onChangeCents={(cents) =>
-                    setValue("monthlyLimit", cents / 100, { shouldDirty: true })
-                  }
-                  invalid={!!errors.monthlyLimit}
-                />
-                {errors.monthlyLimit ? (
-                  <p
-                    role="alert"
-                    className="text-xs text-[var(--color-danger)] mt-1"
-                  >
-                    {errors.monthlyLimit.message}
-                  </p>
-                ) : (
-                  <p className="text-xs text-[var(--color-text-muted)]">
-                    Te avisaremos cuando te acerques a este número.
-                  </p>
+                  {errors.monthlyLimit.message}
+                </p>
+              ) : (
+                <p className="text-xs text-[var(--color-text-muted)]">
+                  Te avisaremos cuando te acerques a este número.
+                </p>
+              )}
+              {/* Hidden field for react-hook-form registration; the
+                  CurrencyInput is the visible controlled surface. */}
+              <input type="hidden" {...register("monthlyLimit")} />
+            </div>
+
+            <div className="flex flex-col gap-1.5">
+              <label
+                htmlFor="currency"
+                className="text-sm font-medium text-[var(--color-text-body)]"
+              >
+                Moneda
+              </label>
+              <Select
+                id="currency"
+                options={CURRENCY_OPTIONS}
+                value={watchedCurrency}
+                onChange={(e) =>
+                  setValue("currency", e.target.value, { shouldDirty: true })
+                }
+                invalid={!!errors.currency}
+              />
+              {errors.currency ? (
+                <p
+                  role="alert"
+                  className="text-xs text-[var(--color-danger)] mt-1"
+                >
+                  {errors.currency.message}
+                </p>
+              ) : null}
+              <input type="hidden" {...register("currency")} />
+            </div>
+
+            <div className="flex flex-col gap-2 pt-1">
+              <button
+                type="submit"
+                disabled={saveDisabled}
+                className={cn(
+                  "h-[52px] w-full rounded-full text-base font-bold transition-colors duration-fast ease-out-soft",
+                  saveDisabled
+                    ? "cursor-default bg-segment text-text-secondary"
+                    : "bg-button text-hero-text hover:bg-primary-hover active:scale-[0.98]",
                 )}
-                {/* Hidden field for react-hook-form registration; the
-                    CurrencyInput is the visible controlled surface. */}
-                <input type="hidden" {...register("monthlyLimit")} />
-              </div>
+              >
+                Guardar cambios
+              </button>
 
-              <div className="flex flex-col gap-1.5">
-                <label
-                  htmlFor="currency"
-                  className="text-sm font-medium text-[var(--color-text-body)]"
+              {savedAt && !isDirty ? (
+                <motion.span
+                  key={savedAt}
+                  initial="hidden"
+                  animate="visible"
+                  variants={fadeIn}
+                  role="status"
+                  className="inline-flex items-center justify-center gap-1.5 text-aux font-semibold text-positive"
                 >
-                  Moneda
-                </label>
-                <Select
-                  id="currency"
-                  options={CURRENCY_OPTIONS}
-                  value={watchedCurrency}
-                  onChange={(e) =>
-                    setValue("currency", e.target.value, { shouldDirty: true })
-                  }
-                  invalid={!!errors.currency}
-                />
-                {errors.currency ? (
-                  <p
-                    role="alert"
-                    className="text-xs text-[var(--color-danger)] mt-1"
-                  >
-                    {errors.currency.message}
-                  </p>
-                ) : null}
-                <input type="hidden" {...register("currency")} />
-              </div>
+                  <Check className="size-4" aria-hidden />
+                  Cambios guardados
+                </motion.span>
+              ) : null}
+            </div>
+          </form>
+        </PaperCard>
 
-              <div className="flex items-center gap-3 pt-2">
-                <Button
-                  type="submit"
-                  variant="primary"
-                  loading={submitting}
-                  disabled={!isDirty || submitting}
-                >
-                  Guardar
-                </Button>
-
-                {savedAt && !isDirty ? (
-                  <motion.span
-                    key={savedAt}
-                    initial="hidden"
-                    animate="visible"
-                    variants={fadeIn}
-                    className="inline-flex items-center gap-1.5 text-sm text-[var(--color-success)]"
-                    role="status"
-                  >
-                    <Check className="size-4" aria-hidden />
-                    Guardado
-                  </motion.span>
-                ) : null}
-              </div>
-            </form>
-          </GlassCard>
-
-          <BackupSection />
-        </div>
+        <BackupSection />
       </div>
     </PageContainer>
   );

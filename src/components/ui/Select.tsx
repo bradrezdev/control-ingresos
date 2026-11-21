@@ -56,6 +56,9 @@ export function Select({
       <select
         className={cn(
           "w-full h-full bg-transparent border-0 outline-none appearance-none",
+          // The select inherits the document font, but not its size: the
+          // native control defaults to `medium`, so pin it to the scale.
+          "text-base",
           "px-4 pr-10 text-[var(--color-text-body)]",
           "disabled:cursor-not-allowed",
           className,

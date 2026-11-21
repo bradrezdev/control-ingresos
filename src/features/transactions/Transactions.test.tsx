@@ -322,4 +322,16 @@ describe("Transactions page (redesign)", () => {
     });
     expect(screen.getByText("Cuota 1 de 12")).toBeInTheDocument();
   });
+
+  it("does not re-apply the shell page padding", async () => {
+    await settingsRepo.update({ monthlyLimit: 100_000, currency: "MXN" });
+    const { container } = renderPage();
+
+    // The shell owns the page padding (app-main); a screen that adds it
+    // again insets the content twice and breaks the margin parity with
+    // the home screen.
+    await waitFor(() => {
+      expect(container.querySelector(".app-main")).toBeNull();
+    });
+  });
 });

@@ -71,7 +71,7 @@ export function ProgressTrack({
           className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 flex flex-col items-center"
           style={{ left: `${clamp(marker.position)}%` }}
         >
-          <span className="text-[11px] font-semibold text-marker mb-0.5">{marker.label}</span>
+          <span className="text-chip font-semibold text-marker mb-0.5">{marker.label}</span>
           <span className="h-6 w-1 rounded-full bg-marker" />
         </div>
       ) : null}

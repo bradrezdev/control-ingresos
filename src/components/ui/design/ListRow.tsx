@@ -49,7 +49,7 @@ export function ListRow(props: ListRowProps): React.JSX.Element {
         </div>
       ) : null}
       <div className="flex min-w-0 flex-1 flex-col gap-0.5">
-        <span className="truncate text-[15px] font-semibold text-ink">{title}</span>
+        <span className="truncate text-body font-semibold text-ink">{title}</span>
         {subtitle ? (
           <span className="truncate text-aux text-muted">{subtitle}</span>
         ) : null}

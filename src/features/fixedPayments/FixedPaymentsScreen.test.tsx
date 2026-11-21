@@ -208,4 +208,13 @@ describe("FixedPaymentsScreen", () => {
     await userEvent.click(screen.getByRole("button", { name: "Diciembre" }));
     expect(mockUseFixedPaymentsSummary).toHaveBeenLastCalledWith("next");
   });
+
+  it("does not re-apply the shell page padding", () => {
+    mockReady(makeSummary([renta, seguro]));
+    const { container } = renderScreen();
+
+    // The shell already owns the page padding (app-main); adding it again
+    // insets the content twice and breaks the margin parity with Inicio.
+    expect(container.querySelector(".app-main")).toBeNull();
+  });
 });

@@ -32,7 +32,7 @@ export function ExportBackupButton({
       setError(
         err instanceof Error
           ? err.message
-          : "No pudimos generar el archivo. Intentá de nuevo.",
+          : "No pudimos generar el archivo. Intenta de nuevo.",
       );
     } finally {
       setBusy(false);
@@ -44,13 +44,14 @@ export function ExportBackupButton({
       <Button
         type="button"
         variant="primary"
+        className="w-full"
         leftIcon={<Download className="size-4" aria-hidden />}
         onClick={onClick}
         loading={busy}
         disabled={busy}
-        aria-label="Exportar respaldo en JSON"
+        aria-label="Exportar información en JSON"
       >
-        Exportar a JSON
+        Exportar información
       </Button>
       {error ? (
         <p role="alert" className="mt-2 text-xs text-[var(--color-danger)]">

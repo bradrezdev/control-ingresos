@@ -22,4 +22,10 @@ describe("StatusPill", () => {
     const { container } = render(<StatusPill tone="ok">Label</StatusPill>);
     expect(container.firstChild).toHaveClass("rounded-pill");
   });
+
+  it("keeps its label on a single line", () => {
+    const { container } = render(<StatusPill tone="warn">En 13 días</StatusPill>);
+    expect(container.firstChild).toHaveClass("whitespace-nowrap");
+    expect(screen.getByText("En 13 días")).toBeInTheDocument();
+  });
 });

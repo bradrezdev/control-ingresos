@@ -15,7 +15,7 @@ export function CategoryAvatar({
     <span
       className={cn(
         "flex size-10 shrink-0 items-center justify-center rounded-full",
-        "text-[15px] font-bold",
+        "text-body font-bold",
         bgClass,
         textClass,
       )}

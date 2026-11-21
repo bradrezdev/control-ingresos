@@ -28,4 +28,21 @@ describe("TermBar", () => {
     const { container } = render(<TermBar label="3 MSI" percent={40} amountCents={0} />);
     expect(container.firstChild).toHaveClass("flex", "items-center", "gap-2.5");
   });
+
+  it("keeps the term label on one line at prototype proportions", () => {
+    const { container } = render(
+      <TermBar label="12 meses" percent={30} amountCents={30000} />,
+    );
+    // Prototype `.ms` rows are 13px so the 62px label column holds
+    // "24 meses" unbroken; the row must not fall back to a larger size.
+    expect(container.firstChild).toHaveClass("text-aux");
+    const label = screen.getByText("12 meses");
+    expect(label).toHaveClass("w-[62px]", "shrink-0", "whitespace-nowrap");
+  });
+
+  it("never breaks the amount or the percentage", () => {
+    render(<TermBar label="12 meses" percent={30} amountCents={30000} />);
+    const amount = screen.getByText("$300.00");
+    expect(amount.parentElement).toHaveClass("whitespace-nowrap");
+  });
 });

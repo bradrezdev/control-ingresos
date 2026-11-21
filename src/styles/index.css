@@ -103,23 +103,48 @@
 
   /* -------------------------------------------------------------------------
    * Typography scale (redesign)
+   *
+   * The scale was reduced one step (2026-11-20) after the visual review:
+   * the prototype values read oversized on a 390px column. Every token is
+   * derived from the previous one, so the hierarchy ratios are unchanged
+   * and the whole scale can be tuned from this single block.
+   *
+   * The Tailwind default sizes (xs/sm/base/lg/xl/3xl) are overridden here
+   * too: 100+ call sites use them, and rem-based defaults would otherwise
+   * keep the old size while the tokens shrank.
    * ------------------------------------------------------------------------- */
-  --text-display: 26px;
-  --text-display--line-height: 1.1;
-  --text-figure: 44px;
-  --text-figure--line-height: 1.05;
-  --text-figure-fraction: 22px;
+  --text-display: 24px;
+  --text-display--line-height: 1.12;
+  --text-figure: 40px;
+  --text-figure--line-height: 1.06;
+  --text-figure-fraction: 20px;
   --text-figure-fraction--line-height: 1.1;
-  --text-secondary-figure: 30px;
+  --text-secondary-figure: 28px;
   --text-secondary-figure--line-height: 1.1;
-  --text-title: 17px;
-  --text-title--line-height: 1.28;
-  --text-body: 15px;
-  --text-body--line-height: 1.35;
-  --text-aux: 13px;
-  --text-aux--line-height: 1.4;
-  --text-chip: 12px;
-  --text-chip--line-height: 1.3;
+  --text-title: 16px;
+  --text-title--line-height: 1.3;
+  --text-body: 14px;
+  --text-body--line-height: 1.38;
+  --text-aux: 12px;
+  --text-aux--line-height: 1.42;
+  --text-chip: 11px;
+  --text-chip--line-height: 1.32;
+  --text-brand: 18px;
+  --text-brand--line-height: 1.15;
+
+  /* Tailwind defaults, re-based on the redesign scale */
+  --text-xs: 11px;
+  --text-xs--line-height: 1.32;
+  --text-sm: 13px;
+  --text-sm--line-height: 1.4;
+  --text-base: 15px;
+  --text-base--line-height: 1.38;
+  --text-lg: 17px;
+  --text-lg--line-height: 1.3;
+  --text-xl: 18px;
+  --text-xl--line-height: 1.28;
+  --text-3xl: 26px;
+  --text-3xl--line-height: 1.12;
 
   --font-weight-normal: 400;
   --font-weight-medium: 500;

@@ -252,7 +252,7 @@ export function Transactions(): React.JSX.Element {
   const monthLabel = format(monthIsoToDate(currentMonth), "MMMM", { locale: es }).toLowerCase();
 
   return (
-    <main className="app-main flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <ScreenHeader
         title="Movimientos"
         right={
@@ -395,6 +395,6 @@ export function Transactions(): React.JSX.Element {
           onClear={clearAdvancedFilters}
         />
       </Drawer>
-    </main>
+    </div>
   );
 }

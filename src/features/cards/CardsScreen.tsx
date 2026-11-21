@@ -39,7 +39,7 @@ export function CardsScreen({
   const { accounts, overview, isLoading, error, retry } = useCardAccounts();
 
   return (
-    <main className="app-main flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <ScreenHeader
         title="Tarjetas"
         subtitle={REORDER_HELP}
@@ -74,7 +74,7 @@ export function CardsScreen({
           </>
         )
       )}
-    </main>
+    </div>
   );
 }
 

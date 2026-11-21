@@ -37,7 +37,7 @@ export function StatusPill({
   return (
     <span
       className={cn(
-        "inline-flex h-7 items-center gap-1 rounded-pill px-2.5",
+        "inline-flex h-7 items-center gap-1 whitespace-nowrap rounded-pill px-2.5",
         "text-xs font-semibold",
         toneClasses[tone],
         className,

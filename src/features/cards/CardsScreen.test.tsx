@@ -223,4 +223,15 @@ describe("CardsScreen", () => {
     );
     expect(onOpenMenu).toHaveBeenCalledWith(accounts[0]);
   });
+
+  it("does not re-apply the shell page padding", () => {
+    const accounts = makeAccounts();
+    mockReady(accounts, makeOverview(accounts));
+    const { container } = renderScreen();
+
+    // The shell already owns the page padding (app-main). A screen that
+    // adds it again insets the content twice, so the margins no longer
+    // match the home screen.
+    expect(container.querySelector(".app-main")).toBeNull();
+  });
 });

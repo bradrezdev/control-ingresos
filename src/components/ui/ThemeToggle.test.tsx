@@ -57,4 +57,17 @@ describe("ThemeToggle", () => {
     // aria-label still present via the radio role lookup
     expect(screen.getByRole("radio", { name: "Claro" })).toBeInTheDocument();
   });
+
+  it("clips the active segment inside the track", () => {
+    useUiStore.setState({ theme: "dark" });
+    render(<ThemeToggle size="md" />);
+
+    const track = screen.getByRole("radiogroup", { name: "Tema" });
+    const active = screen.getByRole("radio", { name: "Oscuro" });
+
+    // The active pill used to poke out of the track's rounded corners:
+    // the track clips it and the pill keeps the track's inner radius.
+    expect(track.className).toContain("overflow-hidden");
+    expect(active.className).toContain("rounded-[12px]");
+  });
 });

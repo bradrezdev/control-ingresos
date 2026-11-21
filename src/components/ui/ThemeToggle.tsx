@@ -52,6 +52,10 @@ export function ThemeToggle({
         "rounded-[var(--radius-md)]",
         "bg-[var(--color-surface-inset)]",
         "border border-[var(--color-border-subtle)]",
+        // The active segment is clipped by the track: its corner radius
+        // (12px = 16px track - 4px padding) can never poke out of the
+        // rounded container.
+        "overflow-hidden",
         className,
       )}
     >
@@ -67,7 +71,7 @@ export function ThemeToggle({
             onClick={() => setTheme(value)}
             className={cn(
               "inline-flex items-center justify-center gap-1.5",
-              "rounded-[var(--radius-sm)]",
+              "rounded-[12px]",
               "transition-colors duration-[var(--duration-fast)] ease-[var(--ease-out-soft)]",
               "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--color-border-focus)]",
               size === "sm" ? "px-2 py-1 text-xs min-h-[28px]" : "px-3 py-1.5 text-sm min-h-[36px]",
