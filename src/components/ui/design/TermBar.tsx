@@ -32,10 +32,10 @@ export function TermBar({
 
   return (
     <div
-      className={cn("flex h-9 items-center gap-2.5 text-sm", className)}
+      className={cn("flex h-9 items-center gap-2.5 text-aux", className)}
       {...props}
     >
-      <span className="w-[62px] shrink-0 text-muted">{label}</span>
+      <span className="w-[62px] shrink-0 whitespace-nowrap text-muted">{label}</span>
       <div className="relative h-2 flex-1 rounded-full bg-segment overflow-hidden">
         <span
           data-term-fill
@@ -43,7 +43,7 @@ export function TermBar({
           style={{ width: `${clamped}%` }}
         />
       </div>
-      <div className="w-[86px] shrink-0 text-right">
+      <div className="w-[86px] shrink-0 whitespace-nowrap text-right">
         {showPercent ? <span className="mr-2 text-muted">{clamped}%</span> : null}
         <Amount cents={amountCents} className="text-ink font-semibold" />
       </div>

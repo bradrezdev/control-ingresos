@@ -2,12 +2,12 @@
  * BackupSection — control-ingresos
  *
  * Settings card that exposes the export + import flow. Both buttons live
- * inside a single GlassCard with a short description so the user
+ * inside a single PaperCard with a short description so the user
  * understands what each action does.
  */
 import { useState } from "react";
 import { Upload } from "lucide-react";
-import { GlassCard } from "@/components/ui/GlassCard";
+import { PaperCard, SectionHeading } from "@/components/ui/design";
 import { Button } from "@/components/ui/Button";
 import { ExportBackupButton } from "./ExportBackupButton";
 import { ImportBackupDialog } from "./ImportBackupDialog";
@@ -16,19 +16,15 @@ export function BackupSection(): React.JSX.Element {
   const [importOpen, setImportOpen] = useState(false);
 
   return (
-    <GlassCard className="p-6 md:p-8">
-      <header className="mb-5">
-        <h2 className="text-base font-semibold text-[var(--color-text-primary)]">
-          Respaldo de datos
-        </h2>
-        <p className="text-xs text-[var(--color-text-muted)] mt-1">
-          Exportá todos tus datos en un archivo JSON o importá un respaldo
-          previo. Los archivos se generan y procesan localmente — nunca salen
-          de este dispositivo.
-        </p>
-      </header>
+    <PaperCard className="p-5">
+      <SectionHeading title="Respaldo de datos" />
+      <p className="mt-1 text-aux text-muted">
+        Exporta todos tus datos en un archivo JSON o importa un respaldo
+        previo. Los archivos se generan y procesan localmente — nunca salen
+        de este dispositivo.
+      </p>
 
-      <div className="flex flex-col sm:flex-row gap-3 sm:items-start">
+      <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-start">
         <ExportBackupButton />
         <Button
           type="button"
@@ -45,6 +41,6 @@ export function BackupSection(): React.JSX.Element {
         open={importOpen}
         onClose={() => setImportOpen(false)}
       />
-    </GlassCard>
+    </PaperCard>
   );
 }

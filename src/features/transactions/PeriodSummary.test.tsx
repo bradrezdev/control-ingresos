@@ -60,4 +60,40 @@ describe("PeriodSummary", () => {
     expect(screen.getByText("Mostrando gastos")).toBeInTheDocument();
     expect(screen.getByText("ingresos")).toBeInTheDocument();
   });
+
+  it("lays the three tiles in a single row that fits 360px", () => {
+    const { container } = render(
+      <PeriodSummary
+        stats={{ spent: 130_907, received: 0, msiCount: 4 }}
+        currency="MXN"
+        onSelect={vi.fn()}
+      />,
+    );
+    const row = container.firstChild as HTMLElement;
+    // A container-aware flex row: no wrap, so "A meses" never drops to a
+    // second row (REDESIGN §Fase 2 punto 3: tres mosaicos en una fila).
+    expect(row).toHaveClass("flex", "@container");
+    expect(row.className).not.toContain("flex-wrap");
+    const tiles = row.querySelectorAll("button");
+    expect(tiles).toHaveLength(3);
+    tiles.forEach((tile) => {
+      expect(tile).toHaveClass("flex-1");
+      expect(tile).toHaveClass("min-w-0");
+    });
+  });
+
+  it("never breaks a cifra and steps down to the 14px floor when narrow", () => {
+    render(
+      <PeriodSummary
+        stats={{ spent: 130_907, received: 0, msiCount: 4 }}
+        currency="MXN"
+        onSelect={vi.fn()}
+      />,
+    );
+    const value = screen.getByText("\u2212$1,309.07");
+    // `white-space` inherits: the tile's value cell keeps the cifra whole.
+    expect(value.parentElement).toHaveClass("whitespace-nowrap");
+    // Cifra 17/700 where it fits; REDESIGN floor for montos is 14px.
+    expect(value.parentElement?.className).toContain("@max-[340px]:text-[14px]");
+  });
 });

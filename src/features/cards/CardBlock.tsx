@@ -6,16 +6,16 @@
  * holder, card type — the schema has no `last4` field). Tapping the face
  * opens the card detail sheet.
  *
- * Below the face: the 8px usage bar with "Usado $X de $Y, Z%" (the
- * percent always in text), and the data row with the 44px drag handle,
- * Corte / Pago (+ status chip) / Disponible, and the 44px options
- * button. Debit cards render only what applies to them — no cycle, no
- * limit, no usage bar.
+ * Below the face: the 8px usage bar, an affordance row with the 44px drag
+ * handle, the usage summary and the 44px options button, and the cycle row
+ * with Corte / Pago (+ status chip) / Disponible. Debit cards render only
+ * what applies to them — no cycle, no limit, no usage bar.
  */
 import type { Ref } from "react";
 import { ChevronRight, GripVertical, MoreHorizontal } from "lucide-react";
 import { Amount, PaperCard, ProgressTrack, StatusPill } from "@/components/ui/design";
-import { formatDayAndMonth, utcDateToLocal } from "@/lib/date/format";
+import { cn } from "@/lib/cn";
+import { formatDayAndMonth, formatShortDay, utcDateToLocal } from "@/lib/date/format";
 import { tintFor } from "./bankTint";
 import type { CardAccount } from "./types";
 
@@ -52,7 +52,11 @@ export function CardBlock({
   return (
     <PaperCard
       aria-label={card.bank}
-      className={isDragging ? "p-5 opacity-40 transition-opacity duration-fast" : "p-5"}
+      className={
+        isDragging
+          ? "@container p-5 opacity-40 transition-opacity duration-fast"
+          : "@container p-5"
+      }
     >
       <button
         type="button"
@@ -98,94 +102,126 @@ export function CardBlock({
             className="h-2"
             aria-label={`Uso de ${card.bank}`}
           />
-          <p className="mt-1.5 text-aux text-muted">
-            Usado{" "}
-            <Amount
-              cents={account.usedCents ?? 0}
-              currency={currency}
-              className="font-semibold text-ink"
-            />{" "}
-            de{" "}
-            <Amount
-              cents={account.limitCents}
-              currency={currency}
-              className="font-semibold text-ink"
-            />
-            ,{" "}
-            <span className="font-semibold text-ink">{account.usedPercent}%</span>
-          </p>
         </div>
-      ) : isCredit ? (
-        <p className="mt-4 text-aux text-muted">
-          Usado{" "}
-          <Amount
-            cents={account.usedCents ?? 0}
-            currency={currency}
-            className="font-semibold text-ink"
-          />{" "}
-          este mes · sin límite registrado
-        </p>
       ) : null}
 
-      <div className="mt-4 grid grid-cols-[44px_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_44px] items-center gap-1 border-t border-border-subtle pt-3">
+      {/* Affordance row: the 44px drag handle and the card options flank the
+          usage summary. Keeping them out of the cycle row leaves the full
+          card width for Corte / Pago / Disponible (no mid-word breaks at
+          360px). The summary wraps between words; amounts never do. */}
+      <div className="mt-2 flex items-center gap-2">
         <div
           ref={handleRef}
           data-dnd-handle
           aria-label="Arrastrar para reordenar"
-          className="grid size-11 cursor-grab touch-none select-none place-items-center rounded-md text-muted active:cursor-grabbing"
+          className="-ml-2 grid size-11 shrink-0 cursor-grab touch-none select-none place-items-center rounded-md text-muted active:cursor-grabbing"
         >
           <GripVertical className="size-5" strokeWidth={2} aria-hidden />
         </div>
 
-        {isCredit ? (
-          <>
-            <DataCell label="Corte" value={`Día ${card.cutDay}`} />
-            <DataCell
-              label="Pago"
-              value={
-                account.paymentDate !== null
-                  ? formatDayAndMonth(utcDateToLocal(account.paymentDate))
-                  : "—"
-              }
-              chip={
-                account.paymentChip ? (
-                  <StatusPill tone={account.paymentChip.tone}>
-                    {account.paymentChip.label}
-                  </StatusPill>
-                ) : undefined
-              }
-            />
-            <DataCell
-              label="Disponible"
-              value={
-                account.availableCents !== null ? (
-                  <Amount
-                    cents={account.availableCents}
-                    currency={currency}
-                    className="tabular-nums"
-                  />
-                ) : (
-                  "Sin límite"
-                )
-              }
-            />
-          </>
-        ) : (
-          <p className="col-span-3 text-aux text-muted">
-            Tarjeta de débito · sin ciclo de corte ni límite
-          </p>
-        )}
+        <p className="min-w-0 flex-1 text-aux text-muted">
+          {isCredit ? (
+            account.limitCents !== null ? (
+              <>
+                Usado{" "}
+                <Amount
+                  cents={account.usedCents ?? 0}
+                  currency={currency}
+                  className="whitespace-nowrap font-semibold text-ink"
+                />{" "}
+                de{" "}
+                <Amount
+                  cents={account.limitCents}
+                  currency={currency}
+                  className="whitespace-nowrap font-semibold text-ink"
+                />
+                ,{" "}
+                <span className="whitespace-nowrap font-semibold text-ink">
+                  {account.usedPercent}%
+                </span>
+              </>
+            ) : (
+              <>
+                Usado{" "}
+                <Amount
+                  cents={account.usedCents ?? 0}
+                  currency={currency}
+                  className="whitespace-nowrap font-semibold text-ink"
+                />{" "}
+                este mes · sin límite registrado
+              </>
+            )
+          ) : (
+            <>Tarjeta de débito · sin ciclo de corte ni límite</>
+          )}
+        </p>
 
         <button
           type="button"
           onClick={() => onOpenMenu(account)}
           aria-label={`Opciones de ${card.bank}`}
-          className="grid size-11 place-items-center rounded-full text-muted transition-colors duration-fast hover:bg-day"
+          className="-mr-2 grid size-11 shrink-0 place-items-center rounded-full text-muted transition-colors duration-fast hover:bg-day"
         >
           <MoreHorizontal className="size-5" strokeWidth={2} aria-hidden />
         </button>
       </div>
+
+      {isCredit ? (
+        <div className="mt-3 flex items-start gap-2.5 border-t border-border-subtle pt-3">
+          <DataCell className="shrink-0" label="Corte" value={`Día ${card.cutDay}`} />
+          <DataCell
+            className="min-w-0 flex-1"
+            label="Pago"
+            value={
+              account.paymentDate !== null ? (
+                <ShortableDate date={utcDateToLocal(account.paymentDate)} />
+              ) : (
+                "—"
+              )
+            }
+            chip={
+              account.paymentChip ? (
+                <StatusPill tone={account.paymentChip.tone}>
+                  {account.paymentChip.label}
+                </StatusPill>
+              ) : undefined
+            }
+          />
+          <DataCell
+            className="shrink-0 text-right"
+            label="Disponible"
+            value={
+              account.availableCents !== null ? (
+                <Amount
+                  cents={account.availableCents}
+                  currency={currency}
+                  className="whitespace-nowrap"
+                />
+              ) : (
+                "Sin límite"
+              )
+            }
+          />
+        </div>
+      ) : null}
     </PaperCard>
+  );
+}
+
+/**
+ * Payment date that never breaks: long format ("7 de diciembre") with a
+ * container-query fallback to the short form ("7 dic") when the card is
+ * too narrow (320px viewports). Only one of the two spans is displayed;
+ * display:none keeps the inactive one out of the accessibility tree.
+ */
+function ShortableDate({ date }: { date: Date }): React.JSX.Element {
+  return (
+    <span className="whitespace-nowrap">
+      <span className="hidden @max-[259px]:inline">
+        {formatDayAndMonth(date)}
+      </span>
+      <span className="@max-[259px]:hidden">{formatShortDay(date)}</span>
+    </span>
   );
 }
 
@@ -193,13 +229,14 @@ interface DataCellProps {
   label: string;
   value: React.ReactNode;
   chip?: React.ReactNode;
+  className?: string;
 }
 
-function DataCell({ label, value, chip }: DataCellProps): React.JSX.Element {
+function DataCell({ label, value, chip, className }: DataCellProps): React.JSX.Element {
   return (
-    <div className="flex min-w-0 flex-col gap-0.5">
-      <span className="text-chip font-semibold text-muted">{label}</span>
-      <span className="text-[13px] font-semibold text-ink tabular-nums break-words">
+    <div className={cn("flex min-w-0 flex-col gap-0.5", className)}>
+      <span className="text-aux text-muted">{label}</span>
+      <span className="whitespace-nowrap text-body font-semibold tabular-nums text-ink">
         {value}
       </span>
       {chip}

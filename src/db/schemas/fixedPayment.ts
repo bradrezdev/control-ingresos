@@ -25,7 +25,7 @@ export const FixedPaymentSchema = z
       ctx.addIssue({
         path: ['cardId'],
         code: 'custom',
-        message: 'Seleccioná una tarjeta',
+        message: 'Selecciona una tarjeta',
       });
     }
     if (data.paymentMethod !== 'credit' && data.msiMonths !== undefined) {

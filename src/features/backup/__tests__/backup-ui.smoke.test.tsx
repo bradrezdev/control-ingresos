@@ -41,6 +41,15 @@ describe("BackupSection", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByText("Importar respaldo")).toBeInTheDocument();
   });
+
+  it("uses tuteo (es-MX) in its copy", () => {
+    render(<BackupSection />);
+    expect(
+      screen.getByText(
+        /Exporta todos tus datos en un archivo JSON o importa un respaldo previo/,
+      ),
+    ).toBeInTheDocument();
+  });
 });
 
 describe("ExportBackupButton", () => {
@@ -70,5 +79,14 @@ describe("ImportBackupDialog", () => {
     render(<ImportBackupDialog open={true} onClose={() => undefined} />);
     expect(screen.getByRole("dialog")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: /Elegir archivo/i })).toBeInTheDocument();
+  });
+
+  it("uses tuteo (es-MX) in the dialog copy", () => {
+    render(<ImportBackupDialog open={true} onClose={() => undefined} />);
+    expect(
+      screen.getByText(/Carga un archivo JSON exportado previamente/i),
+    ).toBeInTheDocument();
+    // The picker copy is "Elige un archivo .json…" (text split around <code>).
+    expect(screen.getByText(/Elige un archivo/)).toBeInTheDocument();
   });
 });

@@ -32,7 +32,7 @@ export function ExportBackupButton({
       setError(
         err instanceof Error
           ? err.message
-          : "No pudimos generar el archivo. Intentá de nuevo.",
+          : "No pudimos generar el archivo. Intenta de nuevo.",
       );
     } finally {
       setBusy(false);

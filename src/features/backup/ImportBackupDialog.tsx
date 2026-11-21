@@ -107,7 +107,7 @@ export function ImportBackupDialog({
       open={open}
       onClose={dismissable ? onClose : () => undefined}
       title="Importar respaldo"
-      description="Cargá un archivo JSON exportado previamente desde esta aplicación."
+      description="Carga un archivo JSON exportado previamente desde esta aplicación."
       size="lg"
     >
       <input
@@ -184,7 +184,7 @@ function PickerStep({ onPick }: { onPick: () => void }): React.JSX.Element {
         aria-hidden
       />
       <p className="text-sm text-[var(--color-text-body)]">
-        Elegí un archivo <code className="font-mono">.json</code> generado por
+        Elige un archivo <code className="font-mono">.json</code> generado por
         esta aplicación.
       </p>
       <Button variant="primary" onClick={onPick}>

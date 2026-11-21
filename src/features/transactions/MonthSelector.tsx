@@ -15,6 +15,10 @@ export function MonthSelector({ monthIso, onChange }: MonthSelectorProps): React
     onChange(dateToMonthIso(date));
   }
 
+  // Capitalized like the Inicio month selector ("Noviembre"), matching the
+  // prototype's period label ("Agosto 2026").
+  const label = formatMonth(monthIso).replace(/^\w/, (c) => c.toUpperCase());
+
   return (
     <div
       className="flex items-center justify-between h-[52px] px-1 rounded-hero bg-surface"
@@ -25,7 +29,7 @@ export function MonthSelector({ monthIso, onChange }: MonthSelectorProps): React
         aria-label="Mes anterior"
         onClick={() => shift(-1)}
       />
-      <span className="text-title font-bold text-primary">{formatMonth(monthIso)}</span>
+      <span className="text-title font-bold text-primary">{label}</span>
       <IconButton
         icon={<ChevronRight className="size-5" strokeWidth={2} aria-hidden />}
         aria-label="Mes siguiente"

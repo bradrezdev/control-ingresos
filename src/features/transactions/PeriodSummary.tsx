@@ -56,7 +56,7 @@ export function PeriodSummary({
   onSelect,
 }: PeriodSummaryProps): React.JSX.Element {
   return (
-    <div className="flex flex-wrap gap-2.5" aria-label="Resumen del periodo">
+    <div className="@container flex gap-2.5" aria-label="Resumen del periodo">
       {TILES.map((tile) => {
         const selected = active === tile.key;
         return (
@@ -66,7 +66,7 @@ export function PeriodSummary({
             aria-pressed={selected}
             onClick={() => onSelect(tile.key)}
             className={cn(
-              "flex-1 min-w-[104px] flex flex-col gap-0.5 items-start p-3 rounded-md",
+              "flex-1 min-w-0 flex flex-col gap-0.5 items-start p-2.5 rounded-md",
               "transition-colors duration-fast ease-out-soft",
               "focus-visible:outline-offset-2",
               selected
@@ -75,7 +75,10 @@ export function PeriodSummary({
             )}
           >
             <span className="text-aux text-muted">{tile.label}</span>
-            <span className="text-title font-bold text-primary whitespace-nowrap tabular-nums">
+            {/* Cifra 17/700 where it fits; below a 340px container the
+                value steps down to the REDESIGN 14px floor for montos so
+                the cifra never breaks or bleeds out of its tile. */}
+            <span className="whitespace-nowrap tabular-nums text-title font-bold text-primary @max-[340px]:text-[14px]">
               {tile.value(stats, currency)}
             </span>
             <span className="text-[11px] font-semibold text-muted">

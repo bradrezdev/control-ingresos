@@ -37,7 +37,7 @@ export class BackupVersionError extends Error {
   constructor(public payloadVersion: number, public maxSupported: number) {
     super(
       `Backup version ${payloadVersion} es superior a la versión soportada (${maxSupported}). ` +
-        "Actualizá la aplicación e intentá de nuevo.",
+        "Actualiza la aplicación e intenta de nuevo.",
     );
     this.name = "BackupVersionError";
   }
