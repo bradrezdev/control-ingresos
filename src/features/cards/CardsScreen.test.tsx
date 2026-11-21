@@ -1,237 +1,269 @@
 /**
- * Tests for the redesigned Tarjetas screen (redesign-ui-2026, T5).
+ * CardsScreen — control-ingresos (Tarjetas · Mis finanzas)
  *
- * The screen data hook is mocked (same pattern as the dashboard tests):
- * these tests cover the three states (loading / empty / error), the
- * summary hero with the next due card, and the interaction callbacks.
+ * Pruebas de la pantalla con el modelo de vista ya construido: la
+ * aritmética vive en `src/engine/wallet.ts` y aquí se comprueba el
+ * orden de las secciones, el texto visible y las acciones.
  */
-import { describe, expect, it, vi, beforeEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { MemoryRouter } from "react-router";
-import type { Card, Transaction } from "@/db/schemas";
-import { computeCardAccount } from "./computeCardAccount";
-import { computeWalletOverview } from "./computeCardAccount";
-import { useCardAccounts } from "./useCardAccounts";
-import { CardsScreen, type CardsScreenProps } from "./CardsScreen";
-import type { CardAccount, WalletOverview } from "./types";
+import { describe, expect, it, vi } from "vitest";
+import { CardsScreen } from "./CardsScreen";
+import type { WalletView } from "./wallet";
+import type { WalletPayment } from "@/engine/wallet";
+import type { Card } from "@/db/schemas";
 
-vi.mock("./useCardAccounts", () => ({
-  useCardAccounts: vi.fn(),
-}));
-
-const mockUseCardAccounts = vi.mocked(useCardAccounts);
-
-const today = new Date("2026-11-20T12:00:00Z");
-
-const plata: Card = {
-  id: "card-1",
+const PLATA: Card = {
+  id: "11111111-1111-4111-8111-111111111111",
   bank: "PLATA",
-  holderName: "Bryan Núñez",
+  holderName: "Bryan Nuñez",
   cardType: "credit",
-  cutDay: 19,
-  daysToPayAfterCut: 3,
-  creditLimit: 1_000_000,
+  cutDay: 22,
+  daysToPayAfterCut: 31,
+  creditLimit: 2_550_000,
   priority: 0,
-  createdAt: "2026-01-01T00:00:00.000Z",
-  updatedAt: "2026-01-01T00:00:00.000Z",
+  skin: "silver",
+  archived: false,
+  createdAt: "2026-01-01T12:00:00.000Z",
+  updatedAt: "2026-01-01T12:00:00.000Z",
 };
 
-const bbva: Card = {
-  id: "card-2",
-  bank: "BBVA",
-  holderName: "Bryan Núñez",
-  cardType: "credit",
-  cutDay: 5,
-  daysToPayAfterCut: 10,
-  creditLimit: 500_000,
+const STORI: Card = {
+  ...PLATA,
+  id: "33333333-3333-4333-8333-333333333333",
+  bank: "Stori",
+  cutDay: 13,
+  daysToPayAfterCut: 22,
+  creditLimit: 1_200_000,
   priority: 1,
-  createdAt: "2026-01-01T00:00:00.000Z",
-  updatedAt: "2026-01-01T00:00:00.000Z",
+  skin: "forest",
 };
 
-function expense(
-  id: string,
-  date: string,
-  amount: number,
-  cardId = "card-1",
-): Transaction {
+const REF = new Date("2026-11-20T00:00:00.000Z");
+
+function usage(card: Card, limit: number, used: number) {
   return {
-    id,
-    type: "expense",
-    amount,
-    currency: "MXN",
-    description: `Gasto ${id}`,
-    date,
-    category: "Comida",
-    paymentMethod: "credit",
-    cardId,
+    card,
+    limitCents: limit,
+    usedCents: used,
+    availableCents: limit - used,
+    percent: Math.round((used / limit) * 100),
+    plans: [],
+    singlePurchases: [],
   };
 }
 
-function makeAccounts(): CardAccount[] {
-  return [
-    computeCardAccount(plata, [expense("p", "2026-11-10", 250_000)], today),
-    computeCardAccount(
-      bbva,
-      [expense("b", "2026-11-10", 100_000, "card-2")],
-      today,
+function buildView(overrides: Partial<WalletView> = {}): WalletView {
+  const usages = [usage(PLATA, 2_550_000, 320_782), usage(STORI, 1_200_000, 0)];
+
+  return {
+    currency: "MXN",
+    referenceDate: REF,
+    cards: [PLATA, STORI],
+    usages,
+    portfolio: {
+      limitCents: 3_750_000,
+      usedCents: 320_782,
+      availableCents: 3_429_218,
+      percent: 9,
+      cardCount: 2,
+    },
+    payments: [
+      {
+        card: PLATA,
+        cut: new Date("2026-10-22T00:00:00.000Z"),
+        due: new Date("2026-11-22T00:00:00.000Z"),
+        daysLeft: 2,
+        installments: [],
+        purchases: [],
+        fixed: [],
+        totalCents: 45_826,
+      },
+    ],
+    purchases: [
+      {
+        id: "p1",
+        cardId: PLATA.id,
+        cardName: "PLATA",
+        description: "Galaxy S26 Papá",
+        term: 24,
+        installmentsLeft: 19,
+        remainingCents: 1_410_104,
+        monthlyCents: 74_200,
+      },
+    ],
+    terms: [24],
+    archived: [],
+    selectedCardId: PLATA.id,
+    selectedUsage: usages[0] ?? null,
+    selectedDeadline: {
+      cut: new Date("2026-10-22T00:00:00.000Z"),
+      due: new Date("2026-11-22T00:00:00.000Z"),
+      daysLeft: 2,
+    },
+    selectedCycle: {
+      start: new Date("2026-09-23T00:00:00.000Z"),
+      cut: new Date("2026-10-22T00:00:00.000Z"),
+      due: new Date("2026-11-22T00:00:00.000Z"),
+    },
+    ...overrides,
+  };
+}
+
+type ScreenHandlers = Partial<{
+  onCreate: () => void;
+  onSelectCard: (cardId: string) => void;
+  onOpenInfo: () => void;
+  onOpenPayment: (payment: WalletPayment) => void;
+  onOpenCard: (cardId: string) => void;
+  onOpenMenu: (cardId: string) => void;
+  onOpenReorder: () => void;
+  onOpenArchived: () => void;
+  onOpenAllPurchases: () => void;
+}>;
+
+function renderScreen(view: WalletView, handlers: ScreenHandlers = {}) {
+  const props = {
+    view,
+    onCreate: vi.fn(),
+    onSelectCard: vi.fn(),
+    onOpenInfo: vi.fn(),
+    onOpenPayment: vi.fn(),
+    onOpenCard: vi.fn(),
+    onOpenMenu: vi.fn(),
+    onOpenReorder: vi.fn(),
+    onOpenArchived: vi.fn(),
+    onOpenAllPurchases: vi.fn(),
+    ...handlers,
+  };
+
+  return {
+    props,
+    ...render(
+      <MemoryRouter>
+        <CardsScreen {...props} />
+      </MemoryRouter>,
     ),
-  ];
-}
-
-function makeOverview(accounts: CardAccount[]): WalletOverview {
-  return computeWalletOverview(accounts, "MXN");
-}
-
-function mockReady(
-  accounts: CardAccount[],
-  overview: WalletOverview,
-): void {
-  mockUseCardAccounts.mockReturnValue({
-    accounts,
-    overview,
-    isLoading: false,
-    error: null,
-    retry: vi.fn(),
-  });
-}
-
-function renderScreen(
-  handlers: Partial<
-    Pick<CardsScreenProps, "onCreate" | "onOpenMenu" | "onOpenDetail">
-  > = {},
-): ReturnType<typeof render> {
-  return render(
-    <MemoryRouter>
-      <CardsScreen
-        onCreate={handlers.onCreate ?? vi.fn()}
-        onOpenMenu={handlers.onOpenMenu ?? vi.fn()}
-        onOpenDetail={handlers.onOpenDetail ?? vi.fn()}
-      />
-    </MemoryRouter>,
-  );
+  };
 }
 
 describe("CardsScreen", () => {
-  beforeEach(() => {
-    mockUseCardAccounts.mockReset();
+  it("muestra las secciones en el orden de la referencia", () => {
+    renderScreen(buildView());
+
+    const headings = screen
+      .getAllByRole("heading")
+      .map((heading) => heading.textContent);
+    expect(headings).toEqual([
+      "Tarjetas",
+      "Mi cartera",
+      "Próximos pagos",
+      "Compras a meses",
+    ]);
   });
 
-  it("shows a skeleton while the data resolves", () => {
-    mockUseCardAccounts.mockReturnValue({
-      accounts: [],
-      overview: null,
-      isLoading: true,
-      error: null,
-      retry: vi.fn(),
-    });
-    renderScreen();
+  it("abre la ficha de la tarjeta desde el plástico", async () => {
+    const user = userEvent.setup();
+    const { props } = renderScreen(buildView());
 
-    expect(screen.getByRole("status")).toBeInTheDocument();
-    expect(screen.queryByText("Disponible total")).not.toBeInTheDocument();
-    expect(screen.queryByRole("progressbar")).not.toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /Ver detalle de PLATA/ }));
+
+    expect(props.onOpenCard).toHaveBeenCalledWith(PLATA.id);
   });
 
-  it("shows an error message with a retry action", async () => {
-    const retry = vi.fn();
-    mockUseCardAccounts.mockReturnValue({
-      accounts: [],
-      overview: null,
-      isLoading: false,
-      error: new Error("boom"),
-      retry,
-    });
-    renderScreen();
+  it("marca la tarjeta elegida en el selector", async () => {
+    const user = userEvent.setup();
+    const { props } = renderScreen(buildView());
 
-    expect(screen.getByText(/No se pudieron cargar/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: "Reintentar" }));
-    expect(retry).toHaveBeenCalled();
+    const selector = screen.getByRole("group", { name: "Seleccionar tarjeta" });
+    expect(within(selector).getByRole("button", { name: "PLATA" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
+    expect(within(selector).getByRole("button", { name: "Stori" })).toHaveAttribute(
+      "aria-pressed",
+      "false",
+    );
+
+    await user.click(within(selector).getByRole("button", { name: "Stori" }));
+
+    expect(props.onSelectCard).toHaveBeenCalledWith(STORI.id);
   });
 
-  it("shows the empty state with an add action", async () => {
-    const onCreate = vi.fn();
-    mockReady([], makeOverview([]));
-    renderScreen({ onCreate });
+  it("ofrecee reordenar sólo con dos o más tarjetas", () => {
+    const { unmount } = renderScreen(buildView());
+    expect(screen.getByRole("button", { name: "Reordenar" })).toBeInTheDocument();
+    unmount();
 
-    expect(screen.getByText("Agrega tu primera tarjeta")).toBeInTheDocument();
-    // The header keeps its icon-only "Nueva tarjeta" button; the empty
-    // state's action is the one with the visible label.
-    await userEvent.click(screen.getByText("Nueva tarjeta"));
-    expect(onCreate).toHaveBeenCalled();
+    renderScreen(
+      buildView({ cards: [PLATA], usages: [usage(PLATA, 2_550_000, 320_782)] }),
+    );
+    expect(screen.queryByRole("button", { name: "Reordenar" })).toBeNull();
   });
 
-  it("renders the header with the reorder help copy", () => {
-    mockReady(makeAccounts(), makeOverview(makeAccounts()));
-    renderScreen();
+  it("muestra el estado vacío de la cartera", () => {
+    renderScreen(
+      buildView({
+        cards: [],
+        usages: [],
+        payments: [],
+        purchases: [],
+        selectedCardId: null,
+        selectedUsage: null,
+        selectedDeadline: null,
+        selectedCycle: null,
+        portfolio: {
+          limitCents: 0,
+          usedCents: 0,
+          availableCents: 0,
+          percent: 0,
+          cardCount: 0,
+        },
+      }),
+    );
 
-    expect(screen.getByText("Tarjetas")).toBeInTheDocument();
     expect(
-      screen.getByText(
-        "Mantén presionada el asa y arrastra para ordenar por prioridad.",
-      ),
+      screen.getByText("Aún no tienes tarjetas registradas."),
     ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Agregar tarjeta" })).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "Próximos pagos" })).toBeNull();
   });
 
-  it("renders the hero with the total available and next due card", () => {
-    const accounts = makeAccounts();
-    mockReady(accounts, makeOverview(accounts));
-    renderScreen();
+  it("abre el desglose del próximo pago desde la cápsula ámbar", async () => {
+    const user = userEvent.setup();
+    const { props } = renderScreen(buildView());
 
-    expect(screen.getByText("Disponible total")).toBeInTheDocument();
-    expect(screen.getByText("Usado total")).toBeInTheDocument();
-    expect(screen.getByText("$11,500")).toBeInTheDocument();
-    expect(screen.getByText("Próximo vencimiento")).toBeInTheDocument();
-    expect(screen.getByText("PLATA, en 2 días")).toBeInTheDocument();
+    await user.click(screen.getByRole("button", { name: /PLATA · En 2 días/ }));
+
+    expect(props.onOpenPayment).toHaveBeenCalled();
   });
 
-  it("omits the next due block when nothing is upcoming", () => {
-    const accounts = makeAccounts();
-    const overview = makeOverview(accounts);
-    mockReady(accounts, { ...overview, nextDue: null });
-    renderScreen();
+  it("ofrecece ver todas las compras sólo cuando hay más de tres", () => {
+    const purchases = Array.from({ length: 4 }, (_, index) => ({
+      id: `p${index}`,
+      cardId: PLATA.id,
+      cardName: "PLATA",
+      description: `Compra ${index + 1}`,
+      term: 12,
+      installmentsLeft: 6,
+      remainingCents: 100_000,
+      monthlyCents: 10_000,
+    }));
 
-    expect(screen.queryByText("Próximo vencimiento")).not.toBeInTheDocument();
+    renderScreen(buildView({ purchases }));
+    expect(screen.getByRole("button", { name: "Ver las 4" })).toBeInTheDocument();
   });
 
-  it("renders every card block with its usage data", () => {
-    const accounts = makeAccounts();
-    mockReady(accounts, makeOverview(accounts));
-    renderScreen();
-
-    expect(screen.getAllByText(/Crédito|Débito/).length).toBeGreaterThan(0);
-    expect(screen.getByText("PLATA")).toBeInTheDocument();
-    expect(screen.getByText("BBVA")).toBeInTheDocument();
-    expect(screen.getByText("25%")).toBeInTheDocument();
-    expect(screen.getByText("Día 19")).toBeInTheDocument();
+  it("no muestra el enlace de compras cuando hay tres o menos", () => {
+    renderScreen(buildView());
+    expect(screen.queryByRole("button", { name: /^Ver las/ })).toBeNull();
   });
 
-  it("forwards detail, menu and create intents", async () => {
-    const onOpenDetail = vi.fn();
-    const onOpenMenu = vi.fn();
-    const accounts = makeAccounts();
-    mockReady(accounts, makeOverview(accounts));
-    renderScreen({ onOpenDetail, onOpenMenu });
+  it("muestra los mensajes vacíos de pagos y compras a meses", () => {
+    renderScreen(buildView({ payments: [], purchases: [] }));
 
-    await userEvent.click(
-      screen.getByRole("button", { name: "Ver detalle de PLATA" }),
-    );
-    expect(onOpenDetail).toHaveBeenCalledWith(accounts[0]);
-
-    await userEvent.click(
-      screen.getByRole("button", { name: "Opciones de PLATA" }),
-    );
-    expect(onOpenMenu).toHaveBeenCalledWith(accounts[0]);
-  });
-
-  it("does not re-apply the shell page padding", () => {
-    const accounts = makeAccounts();
-    mockReady(accounts, makeOverview(accounts));
-    const { container } = renderScreen();
-
-    // The shell already owns the page padding (app-main). A screen that
-    // adds it again insets the content twice, so the margins no longer
-    // match the home screen.
-    expect(container.querySelector(".app-main")).toBeNull();
+    expect(screen.getByText("Sin pagos previstos.")).toBeInTheDocument();
+    expect(screen.getByText("Sin compras a meses activas.")).toBeInTheDocument();
   });
 });

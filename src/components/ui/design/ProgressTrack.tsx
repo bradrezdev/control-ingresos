@@ -15,6 +15,13 @@ export interface ProgressTrackProps extends HTMLAttributes<HTMLDivElement> {
   variant?: "default" | "hero";
   /** Fill color tone for data-driven bars (default variant only). */
   tone?: "primary" | "warning" | "danger";
+  /**
+   * Thickness of the track.
+   *
+   * `md` (12 px) is the summary bar; `sm` (7 px) is the per-card bar,
+   * which rides on the separator color (`DESIGN-RULES` §6).
+   */
+  size?: "sm" | "md";
 }
 
 function clamp(value: number): number {
@@ -32,6 +39,7 @@ export function ProgressTrack({
   marker,
   variant = "default",
   tone = "primary",
+  size = "md",
   className,
   ...props
 }: ProgressTrackProps): React.JSX.Element {
@@ -53,8 +61,13 @@ export function ProgressTrack({
       aria-valuemin={0}
       aria-valuemax={100}
       className={cn(
-        "relative h-3 w-full rounded-full overflow-hidden",
-        variant === "hero" ? "bg-hero-text/20" : "bg-segment",
+        "relative w-full rounded-full overflow-hidden",
+        size === "sm" ? "h-[7px]" : "h-3",
+        variant === "hero"
+          ? "bg-hero-text/20"
+          : size === "sm"
+            ? "bg-border-subtle"
+            : "bg-segment",
         className,
       )}
       {...props}
