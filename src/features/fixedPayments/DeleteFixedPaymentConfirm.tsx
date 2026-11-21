@@ -5,7 +5,7 @@
  * `DeleteCardConfirm`: plain message + Cancel/Delete pair; the Delete
  * button shows a spinner while the store is mutating Dexie.
  */
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { Modal } from "@/components/ui/Modal";
 import { Button } from "@/components/ui/Button";
 import { useFixedPaymentsStore } from "@/stores/fixedPaymentsStore";
@@ -26,6 +26,13 @@ export function DeleteFixedPaymentConfirm({
   const currency = useSettingsStore((s) => s.settings?.currency ?? "MXN");
   const [submitting, setSubmitting] = useState(false);
 
+  // Stable close reference — `Modal` re-runs its focus effect when the
+  // `onClose` identity changes, so an inline no-op would re-trigger it
+  // on every render while submitting.
+  const handleModalClose = useCallback(() => {
+    if (!submitting) onClose();
+  }, [submitting, onClose]);
+
   async function onConfirm(): Promise<void> {
     if (!fixedPayment || submitting) return;
     setSubmitting(true);
@@ -40,7 +47,7 @@ export function DeleteFixedPaymentConfirm({
   return (
     <Modal
       open={!!fixedPayment}
-      onClose={submitting ? () => undefined : onClose}
+      onClose={handleModalClose}
       title="Eliminar pago fijo"
       size="sm"
       {...(fixedPayment
