@@ -6,8 +6,11 @@
  * initial bundle small (Chart.js / Motion only fetched on first
  * dashboard visit).
  */
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, useMemo } from "react";
+import { format } from "date-fns";
+import { es } from "date-fns/locale";
 import { PageContainer } from "@/components/layout/PageContainer";
+import { ScreenHeader, SettingsButton } from "@/components/ui/design";
 import { Skeleton } from "@/components/ui/Skeleton";
 
 const BudgetCard = lazy(() =>
@@ -23,25 +26,37 @@ const MsiSummary = lazy(() =>
 );
 
 export function Dashboard(): React.JSX.Element {
+  const eyebrow = useMemo(
+    () =>
+      format(new Date(), "EEEE d 'de' MMMM", { locale: es }).replace(
+        /^\w/,
+        (c) => c.toUpperCase(),
+      ),
+    [],
+  );
+
   return (
-    <PageContainer
-      title="Dashboard"
-      description="Resumen financiero del mes en curso."
-      bare
-    >
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 auto-rows-fr">
-        <Suspense fallback={<WidgetSkeleton />}>
-          <BudgetCard monthOffset={0} />
-        </Suspense>
-        <Suspense fallback={<WidgetSkeleton />}>
-          <BudgetCard monthOffset={1} />
-        </Suspense>
-        <Suspense fallback={<WidgetSkeleton />}>
-          <FixedPaymentsWidget />
-        </Suspense>
-        <Suspense fallback={<WidgetSkeleton />}>
-          <MsiSummary />
-        </Suspense>
+    <PageContainer bare>
+      <div className="flex flex-col gap-4">
+        <ScreenHeader
+          title="Inicio"
+          eyebrow={eyebrow}
+          right={<SettingsButton />}
+        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-5 auto-rows-fr">
+          <Suspense fallback={<WidgetSkeleton />}>
+            <BudgetCard monthOffset={0} />
+          </Suspense>
+          <Suspense fallback={<WidgetSkeleton />}>
+            <BudgetCard monthOffset={1} />
+          </Suspense>
+          <Suspense fallback={<WidgetSkeleton />}>
+            <FixedPaymentsWidget />
+          </Suspense>
+          <Suspense fallback={<WidgetSkeleton />}>
+            <MsiSummary />
+          </Suspense>
+        </div>
       </div>
     </PageContainer>
   );

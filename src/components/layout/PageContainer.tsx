@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 
 interface PageContainerProps {
-  title: string;
+  title?: string;
   description?: string;
   actions?: ReactNode;
   /**
-   * When `true`, the inner `glass` wrapper is omitted and children render
-   * directly inside the outer container. Used by pages whose children are
-   * already their own surface (e.g. Dashboard, where each widget is a
-   * `GlassCard` and the wrapper would create a double-glass).
+   * When `true`, the header is omitted and children render directly.
+   * Pages that draw their own header (e.g. Dashboard, Settings) use this.
    */
   bare?: boolean;
   children: ReactNode;
@@ -21,23 +19,24 @@ export function PageContainer({
   bare = false,
   children,
 }: PageContainerProps): React.JSX.Element {
+  if (bare) {
+    return <>{children}</>;
+  }
+
   return (
-    <div className="p-6 md:p-8 max-w-6xl mx-auto w-full">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-[var(--color-text-primary)]">
-            {title}
-          </h1>
+    <>
+      <header className="mb-5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-display font-extrabold text-primary">{title}</h1>
           {description ? (
-            <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-              {description}
-            </p>
+            <p className="text-aux text-muted mt-0.5">{description}</p>
           ) : null}
         </div>
-        {actions ? <div className="flex items-center gap-2">{actions}</div> : null}
+        {actions ? (
+          <div className="flex shrink-0 items-center gap-2">{actions}</div>
+        ) : null}
       </header>
-
-      {bare ? children : <div className="glass p-6 md:p-8">{children}</div>}
-    </div>
+      <div className="flex flex-col gap-4">{children}</div>
+    </>
   );
 }

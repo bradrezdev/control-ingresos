@@ -19,8 +19,13 @@ export type { PaperCardProps } from "./PaperCard";
 export { ProgressTrack } from "./ProgressTrack";
 export type { ProgressTrackProps, ProgressTrackMarker } from "./ProgressTrack";
 
+export { ScreenHeader } from "./ScreenHeader";
+export type { ScreenHeaderProps } from "./ScreenHeader";
+
 export { SectionHeading } from "./SectionHeading";
 export type { SectionHeadingProps } from "./SectionHeading";
+
+export { SettingsButton } from "./SettingsButton";
 
 export { SegmentedControl } from "./SegmentedControl";
 export type { SegmentedControlProps, SegmentedOption } from "./SegmentedControl";
