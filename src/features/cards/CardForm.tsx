@@ -31,20 +31,20 @@ const cardFormSchema = z.object({
   cardType: z.enum(["debit", "credit"]),
   bank: z
     .string()
-    .min(1, "Ingresá el banco")
+    .min(1, "Ingresa el banco")
     .max(60, "Máximo 60 caracteres"),
   holderName: z
     .string()
-    .min(1, "Ingresá el nombre para la tarjeta")
+    .min(1, "Ingresa el nombre para la tarjeta")
     .max(80, "Máximo 80 caracteres"),
   cutDay: z
-    .number({ error: "Ingresá un día entre 1 y 31" })
+    .number({ error: "Ingresa un día entre 1 y 31" })
     .int("Debe ser entero")
     .min(1, "Mínimo 1")
     .max(31, "Máximo 31")
     .optional(),
   daysToPayAfterCut: z
-    .number({ error: "Ingresá un valor entre 1 y 62" })
+    .number({ error: "Ingresa un valor entre 1 y 62" })
     .int("Debe ser entero")
     .min(1, "Mínimo 1")
     .max(62, "Máximo 62")
@@ -276,7 +276,7 @@ export function CardForm({
               }}
             />
             <p className="text-xs text-[var(--color-text-muted)]">
-              Dejalo vacío si no querés registrarlo.
+              Déjalo vacío si no quieres registrarlo.
             </p>
           </div>
         </>
