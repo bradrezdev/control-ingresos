@@ -88,7 +88,7 @@ export function Sheet({
                 id={titleId}
                 data-sheet-initial-focus
                 tabIndex={-1}
-                className="text-title font-bold leading-tight tracking-tight text-primary focus-visible:outline-none"
+                className="text-title font-bold leading-tight tracking-tight text-primary focus-visible:outline-none!"
               >
                 {title}
               </h2>
