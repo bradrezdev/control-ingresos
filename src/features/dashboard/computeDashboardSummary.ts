@@ -1,4 +1,4 @@
-import { format, getDaysInMonth } from "date-fns";
+import { format, getDaysInMonth, parseISO } from "date-fns";
 import { es } from "date-fns/locale";
 import type { Card, FixedPayment, Transaction } from "@/db/schemas";
 import {
@@ -177,7 +177,10 @@ function buildRecentTransactions(
         description: tx.description,
         amountCents: isIncome ? tx.amount : -tx.amount,
         sign: isIncome ? ("positive" as const) : ("negative" as const),
-        date: new Date(tx.date),
+        // parseISO reads "YYYY-MM-DD" as LOCAL midnight, so the row date
+        // is the stored calendar day (new Date(...) would be UTC midnight
+        // and render one day early in negative offsets).
+        date: parseISO(tx.date),
         accountName: accountNameForTransaction(tx, cardById),
         category: tx.category,
         categoryInitial: (tx.category ?? tx.description).charAt(0).toUpperCase(),

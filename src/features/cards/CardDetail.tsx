@@ -12,8 +12,8 @@ import { format, addMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import { parseISO } from "date-fns";
 import { Amount, ListRow, SectionHeading, StatusPill } from "@/components/ui/design";
-import { formatDate, formatShortDay } from "@/lib/date/format";
-import { computeMsiPlans, toLocalDay } from "./computeCardAccount";
+import { formatDate, formatShortDay, utcDateToLocal } from "@/lib/date/format";
+import { computeMsiPlans } from "./computeCardAccount";
 import { useLiveMsiForCard } from "./useLiveMsiForCard";
 import type { CardAccount } from "./types";
 
@@ -51,11 +51,11 @@ export function CardDetail({
           <dl className="grid grid-cols-[1fr_auto] items-center gap-y-3 text-body">
             <dt className="text-muted">Corte</dt>
             <dd className="text-right font-semibold text-ink">
-              {formatDate(toLocalDay(cycle.cutDate))}
+              {formatDate(utcDateToLocal(cycle.cutDate))}
             </dd>
             <dt className="text-muted">Fecha límite de pago</dt>
             <dd className="flex items-center justify-end gap-2 text-right font-semibold text-ink">
-              {formatDate(toLocalDay(paymentDate))}
+              {formatDate(utcDateToLocal(paymentDate))}
               {paymentChip ? (
                 <StatusPill tone={paymentChip.tone}>{paymentChip.label}</StatusPill>
               ) : null}

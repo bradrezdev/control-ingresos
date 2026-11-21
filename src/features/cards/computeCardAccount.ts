@@ -62,14 +62,6 @@ function isoUtcDay(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * Converts an engine (UTC-midnight) date to a local-calendar Date so the
- * existing formatters render the intended calendar day in any timezone.
- */
-export function toLocalDay(date: Date): Date {
-  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
-}
-
 /** Usage tone per the redesign spec: ≤60 primary, 61–85 warning, >85 danger. */
 function usageToneFor(percent: number): UsageTone {
   if (percent > 85) return "danger";

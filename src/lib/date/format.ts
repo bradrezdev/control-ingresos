@@ -66,6 +66,19 @@ export function toIsoDateString(date: Date): string {
   return `${y}-${m}-${d}`;
 }
 
+/**
+ * Converts an engine date (UTC midnight, e.g. from `computeActivePaymentDate`)
+ * into a local-calendar Date with the same year/month/day, so the local
+ * formatters in this module render the engine's intended calendar day in
+ * any timezone.
+ *
+ *   utcDateToLocal(new Date("2026-11-22T00:00:00.000Z"))
+ *     -> local midnight of November 22, 2026
+ */
+export function utcDateToLocal(date: Date): Date {
+  return new Date(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate());
+}
+
 /** Parse a "YYYY-MM" month string to a Date at the first of that month. */
 export function monthIsoToDate(monthIso: string): Date {
   const [yearStr, monthStr] = monthIso.split("-");
