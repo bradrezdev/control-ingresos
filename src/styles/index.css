@@ -1,52 +1,88 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
- * Design Tokens — control-ingresos
- * Apple HIG-inspired neutrals, single Inter family, glass surfaces, 24px base.
- * ADR-05: Inter only. ADR-10: Tailwind 4 @theme CSS-first.
+ * Design Tokens — control-ingresos (redesign-ui-2026)
+ *
+ * Canonical palette source: /Users/bradrez/Downloads/REDESIGN.md (Tokens).
+ * Prototype structure source: /Users/bradrez/Downloads/rediseño-control-ingresos
+ *
+ * ADR-05: Inter only via @fontsource/inter (400/500/600/700).
+ * ADR-10: Tailwind 4 @theme CSS-first. No tailwind.config.js.
  *
  * Theme strategy:
- *   - `@theme` block holds the LIGHT defaults (Tailwind 4 expects defaults
- *     declared here so utilities resolve at build time).
- *   - `:root[data-theme="dark"]` forces dark mode regardless of OS.
- *   - `:root[data-theme="light"]` forces light mode regardless of OS.
- *   - `:root[data-theme="system"]` (or no attribute) falls back to
- *     `prefers-color-scheme: dark` for native system preference.
+ *   - `@theme` block holds the LIGHT defaults.
+ *   - `:root[data-theme="dark"]` forces dark mode.
+ *   - `:root[data-theme="light"]` forces light mode.
+ *   - `:root[data-theme="system"]` (or no attribute) follows OS preference.
  *
  * BootstrapProvider applies `data-theme` on `document.documentElement` from
  * `useUiStore.theme`, so the user's explicit choice always wins.
  * --------------------------------------------------------------------------- */
 
 @theme {
-  /* Neutral palette (Apple zinc with a subtle cool/blue tint) — LIGHT */
-  --color-canvas: #fbfbfb;
-  --color-canvas-deep: #f4f4f6;
+  /* -------------------------------------------------------------------------
+   * Color — canonical redesign palette (LIGHT)
+   * ------------------------------------------------------------------------- */
+  --color-canvas: #f3f5f9;
+  --color-canvas-deep: #e9edf4;
+  --color-day: #f7f8fb;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
-  --color-surface-inset: #f6f6f8;
+  --color-surface-inset: #f3f5f9; /* superficie secundaria */
   --color-overlay: rgb(0 0 0 / 0.04);
+  --color-accent-card: #edf2fa;
+  --color-tinygrid: #dbe3ef;
 
-  /* Borders (subtle, oklch) */
-  --color-border-subtle: oklch(0.92 0.005 240);
-  --color-border-strong: oklch(0.86 0.008 240);
-  --color-border-focus: #062a63;
-
-  /* Brand */
-  --color-primary: #062a63;
-  --color-primary-hover: #051f4d;
-  --color-secondary: #0cbce5;
-
-  /* Semantic */
-  --color-success: #10b981;
-  --color-warning: #f59e0b;
-  --color-danger: #ef4444;
-  --color-danger-neon: oklch(0.65 0.32 25);
-
-  /* Text */
-  --color-text-primary: #062a63;
-  --color-text-body: #1f2937;
-  --color-text-muted: oklch(0.45 0.005 240);
+  --color-ink: #0f1b33;
+  --color-muted: #5b6577;
+  --color-text-primary: #0b2b66;
+  --color-text-body: #0f1b33;
+  --color-text-muted: #5b6577;
   --color-text-inverse: #ffffff;
+  --color-text-secondary: #4a5468;
+
+  --color-primary: #0b2b66;
+  --color-primary-hover: #081d47;
+  --color-button: #0b2b66;
+  --color-secondary: #0cbce5;
+  --color-hero: #0b2b66;
+  --color-hero-text: #ffffff;
+  --color-hero-dim: #b9c6e4;
+  --color-hero-line: #81acfa;
+
+  --color-border-subtle: #e9edf4;
+  --color-border-strong: #cdd5e3;
+  --color-border-focus: #0b2b66;
+  --color-selected: #e8eefb;
+  --color-segment: #e4e9f2;
+
+  --color-marker: #ffc15a;
+  --color-neutral-bg: #eef1f6;
+
+  /* Semantic intents */
+  --color-success: #0a5c3e;
+  --color-positive: #0a5c3e;
+  --color-positive-bg: #ddf3e8;
+  --color-mint: #c6e9db;
+  --color-warning: #8a4b00;
+  --color-warning-bg: #fff1d6;
+  --color-danger: #9b1c1c;
+  --color-danger-bg: #fde4e4;
+  --color-violet: #5a4890;
+  --color-violet-bg: #ede9f7;
+  --color-rose: #8a4262;
+  --color-rose-bg: #f9eaf0;
+  --color-cyan: #0b5b73;
+  --color-cyan-bg: #e0f4fa;
+  --color-accent-blue: #2c578e;
+  --color-accent-blue-bg: #e5edfc;
+
+  /* Chart palette */
+  --color-chart-1: #123676;
+  --color-chart-2: #3862ac;
+  --color-chart-3: #7796ca;
+  --color-chart-4: #a4b8db;
+  --color-chart-5: #cfdaeb;
 
   /* Glass surface */
   --color-glass-bg: rgb(255 255 255 / 0.7);
@@ -54,18 +90,53 @@
   --glass-blur: 20px;
   --glass-saturate: 180%;
 
-  /* Radii */
+  /* -------------------------------------------------------------------------
+   * Radii (redesign)
+   * ------------------------------------------------------------------------- */
   --radius-sm: 8px;
   --radius-md: 16px;
   --radius-lg: 24px;
+  --radius-hero: 28px;
   --radius-xl: 32px;
   --radius-full: 9999px;
+  --radius-pill: 999px;
 
-  /* Shadows — Apple-spec diffusion */
-  --shadow-card: 0 2px 4px rgb(0 0 0 / 0.02), 0 1px 2px rgb(0 0 0 / 0.04);
-  --shadow-card-hover: 0 10px 20px rgb(0 0 0 / 0.04), 0 2px 6px rgb(0 0 0 / 0.04);
+  /* -------------------------------------------------------------------------
+   * Typography scale (redesign)
+   * ------------------------------------------------------------------------- */
+  --text-display: 26px;
+  --text-display--line-height: 1.1;
+  --text-figure: 44px;
+  --text-figure--line-height: 1.05;
+  --text-figure-fraction: 22px;
+  --text-figure-fraction--line-height: 1.1;
+  --text-secondary-figure: 30px;
+  --text-secondary-figure--line-height: 1.1;
+  --text-title: 17px;
+  --text-title--line-height: 1.28;
+  --text-body: 15px;
+  --text-body--line-height: 1.35;
+  --text-aux: 13px;
+  --text-aux--line-height: 1.4;
+  --text-chip: 12px;
+  --text-chip--line-height: 1.3;
+
+  --font-weight-normal: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+  --font-weight-extrabold: 800;
+
+  /* -------------------------------------------------------------------------
+   * Shadows — Apple-spec diffusion.
+   * Cards are shadowless in the redesign; only nav and the "+" button use a
+   * soft shadow.
+   * ------------------------------------------------------------------------- */
+  --shadow-card: none;
+  --shadow-card-hover: none;
   --shadow-glass: 0 8px 32px 0 rgb(6 42 99 / 0.05);
   --shadow-cta: 0 12px 24px -8px rgb(6 42 99 / 0.25);
+  --shadow-nav: 0 7px 32px rgb(16 36 73 / 0.14);
 
   /* Typography — Inter (Fontsource) */
   --font-sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -81,50 +152,138 @@
 
 /* ---------------------------------------------------------------------------
  * Explicit LIGHT — user forced light regardless of OS preference.
- * Mirrors the @theme defaults so the override is bulletproof.
+ * Mirrors the @theme defaults.
  * --------------------------------------------------------------------------- */
 :root[data-theme="light"] {
-  --color-canvas: #fbfbfb;
-  --color-canvas-deep: #f4f4f6;
+  --color-canvas: #f3f5f9;
+  --color-canvas-deep: #e9edf4;
+  --color-day: #f7f8fb;
   --color-surface: #ffffff;
   --color-surface-elevated: #ffffff;
-  --color-surface-inset: #f6f6f8;
+  --color-surface-inset: #f3f5f9;
   --color-overlay: rgb(0 0 0 / 0.04);
+  --color-accent-card: #edf2fa;
+  --color-tinygrid: #dbe3ef;
 
-  --color-border-subtle: oklch(0.92 0.005 240);
-  --color-border-strong: oklch(0.86 0.008 240);
-
-  --color-text-primary: #062a63;
-  --color-text-body: #1f2937;
-  --color-text-muted: oklch(0.45 0.005 240);
+  --color-ink: #0f1b33;
+  --color-muted: #5b6577;
+  --color-text-primary: #0b2b66;
+  --color-text-body: #0f1b33;
+  --color-text-muted: #5b6577;
   --color-text-inverse: #ffffff;
+  --color-text-secondary: #4a5468;
+
+  --color-primary: #0b2b66;
+  --color-primary-hover: #081d47;
+  --color-button: #0b2b66;
+  --color-hero: #0b2b66;
+  --color-hero-text: #ffffff;
+  --color-hero-dim: #b9c6e4;
+  --color-hero-line: #81acfa;
+
+  --color-border-subtle: #e9edf4;
+  --color-border-strong: #cdd5e3;
+  --color-border-focus: #0b2b66;
+  --color-selected: #e8eefb;
+  --color-segment: #e4e9f2;
+
+  --color-marker: #ffc15a;
+  --color-neutral-bg: #eef1f6;
+
+  --color-success: #0a5c3e;
+  --color-positive: #0a5c3e;
+  --color-positive-bg: #ddf3e8;
+  --color-mint: #c6e9db;
+  --color-warning: #8a4b00;
+  --color-warning-bg: #fff1d6;
+  --color-danger: #9b1c1c;
+  --color-danger-bg: #fde4e4;
+  --color-violet: #5a4890;
+  --color-violet-bg: #ede9f7;
+  --color-rose: #8a4262;
+  --color-rose-bg: #f9eaf0;
+  --color-cyan: #0b5b73;
+  --color-cyan-bg: #e0f4fa;
+  --color-accent-blue: #2c578e;
+  --color-accent-blue-bg: #e5edfc;
+
+  --color-chart-1: #123676;
+  --color-chart-2: #3862ac;
+  --color-chart-3: #7796ca;
+  --color-chart-4: #a4b8db;
+  --color-chart-5: #cfdaeb;
 
   --color-glass-bg: rgb(255 255 255 / 0.7);
   --color-glass-border: rgb(255 255 255 / 0.5);
 
-  --shadow-card: 0 2px 4px rgb(0 0 0 / 0.02), 0 1px 2px rgb(0 0 0 / 0.04);
-  --shadow-card-hover: 0 10px 20px rgb(0 0 0 / 0.04),
-    0 2px 6px rgb(0 0 0 / 0.04);
+  --shadow-card: none;
+  --shadow-card-hover: none;
   --shadow-glass: 0 8px 32px 0 rgb(6 42 99 / 0.05);
+  --shadow-nav: 0 7px 32px rgb(16 36 73 / 0.14);
 }
 
 /* ---------------------------------------------------------------------------
  * Explicit DARK — user forced dark regardless of OS preference.
- * Borders-only diffusion (no shadows) per ONANO.
+ * Canonical palette from REDESIGN.md.
  * --------------------------------------------------------------------------- */
 :root[data-theme="dark"] {
-  --color-canvas: #0a0a0c;
-  --color-canvas-deep: #111114;
-  --color-surface: #14141a;
-  --color-surface-elevated: #1a1a22;
-  --color-surface-inset: #0f0f14;
+  --color-canvas: #0a0f1c;
+  --color-canvas-deep: #0f1524;
+  --color-day: #121a2b;
+  --color-surface: #121a2b;
+  --color-surface-elevated: #1a2438;
+  --color-surface-inset: #1a2438;
   --color-overlay: rgb(255 255 255 / 0.04);
+  --color-accent-card: #1b2940;
+  --color-tinygrid: #31405a;
 
-  --color-border-subtle: oklch(0.28 0.005 240);
-  --color-border-strong: oklch(0.36 0.008 240);
+  --color-ink: #eaf0fa;
+  --color-muted: #9aa7bf;
+  --color-text-primary: #7fa2f0;
+  --color-text-body: #eaf0fa;
+  --color-text-muted: #9aa7bf;
+  --color-text-inverse: #ffffff;
+  --color-text-secondary: #c0ccde;
 
-  --color-text-body: #e5e7eb;
-  --color-text-muted: oklch(0.65 0.005 240);
+  --color-primary: #7fa2f0;
+  --color-primary-hover: #a6c1f7;
+  --color-button: #3b6fd4;
+  --color-hero: #3b6fd4;
+  --color-hero-text: #ffffff;
+  --color-hero-dim: #d4e3ff;
+  --color-hero-line: #91baff;
+
+  --color-border-subtle: #243049;
+  --color-border-strong: #35445e;
+  --color-border-focus: #7fa2f0;
+  --color-selected: #223455;
+  --color-segment: #28354b;
+
+  --color-marker: #ffc15a;
+  --color-neutral-bg: #1a2438;
+
+  --color-success: #7be0b0;
+  --color-positive: #7be0b0;
+  --color-positive-bg: #12352a;
+  --color-mint: #235447;
+  --color-warning: #ffc969;
+  --color-warning-bg: #3a2a0c;
+  --color-danger: #ff9c9c;
+  --color-danger-bg: #3d1717;
+  --color-violet: #d2c3fa;
+  --color-violet-bg: #302a47;
+  --color-rose: #f6b5d4;
+  --color-rose-bg: #382438;
+  --color-cyan: #7fd3ea;
+  --color-cyan-bg: #0f2f3a;
+  --color-accent-blue: #adccff;
+  --color-accent-blue-bg: #243653;
+
+  --color-chart-1: #a9c5ff;
+  --color-chart-2: #789fef;
+  --color-chart-3: #567abf;
+  --color-chart-4: #3e5b91;
+  --color-chart-5: #304160;
 
   --color-glass-bg: rgb(20 20 26 / 0.7);
   --color-glass-border: rgb(255 255 255 / 0.08);
@@ -132,26 +291,71 @@
   --shadow-card: none;
   --shadow-card-hover: none;
   --shadow-glass: 0 8px 32px 0 rgb(0 0 0 / 0.35);
+  --shadow-nav: 0 7px 32px rgb(0 0 0 / 0.31);
 }
 
 /* ---------------------------------------------------------------------------
- * SYSTEM — follow OS preference. Only applies when no explicit override
- * (data-theme="light" or "dark") is set.
+ * SYSTEM — follow OS preference.
  * --------------------------------------------------------------------------- */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]):not([data-theme="dark"]) {
-    --color-canvas: #0a0a0c;
-    --color-canvas-deep: #111114;
-    --color-surface: #14141a;
-    --color-surface-elevated: #1a1a22;
-    --color-surface-inset: #0f0f14;
+    --color-canvas: #0a0f1c;
+    --color-canvas-deep: #0f1524;
+    --color-day: #121a2b;
+    --color-surface: #121a2b;
+    --color-surface-elevated: #1a2438;
+    --color-surface-inset: #1a2438;
     --color-overlay: rgb(255 255 255 / 0.04);
+    --color-accent-card: #1b2940;
+    --color-tinygrid: #31405a;
 
-    --color-border-subtle: oklch(0.28 0.005 240);
-    --color-border-strong: oklch(0.36 0.008 240);
+    --color-ink: #eaf0fa;
+    --color-muted: #9aa7bf;
+    --color-text-primary: #7fa2f0;
+    --color-text-body: #eaf0fa;
+    --color-text-muted: #9aa7bf;
+    --color-text-inverse: #ffffff;
+    --color-text-secondary: #c0ccde;
 
-    --color-text-body: #e5e7eb;
-    --color-text-muted: oklch(0.65 0.005 240);
+    --color-primary: #7fa2f0;
+    --color-primary-hover: #a6c1f7;
+    --color-button: #3b6fd4;
+    --color-hero: #3b6fd4;
+    --color-hero-text: #ffffff;
+    --color-hero-dim: #d4e3ff;
+    --color-hero-line: #91baff;
+
+    --color-border-subtle: #243049;
+    --color-border-strong: #35445e;
+    --color-border-focus: #7fa2f0;
+    --color-selected: #223455;
+    --color-segment: #28354b;
+
+    --color-marker: #ffc15a;
+    --color-neutral-bg: #1a2438;
+
+    --color-success: #7be0b0;
+    --color-positive: #7be0b0;
+    --color-positive-bg: #12352a;
+    --color-mint: #235447;
+    --color-warning: #ffc969;
+    --color-warning-bg: #3a2a0c;
+    --color-danger: #ff9c9c;
+    --color-danger-bg: #3d1717;
+    --color-violet: #d2c3fa;
+    --color-violet-bg: #302a47;
+    --color-rose: #f6b5d4;
+    --color-rose-bg: #382438;
+    --color-cyan: #7fd3ea;
+    --color-cyan-bg: #0f2f3a;
+    --color-accent-blue: #adccff;
+    --color-accent-blue-bg: #243653;
+
+    --color-chart-1: #a9c5ff;
+    --color-chart-2: #789fef;
+    --color-chart-3: #567abf;
+    --color-chart-4: #3e5b91;
+    --color-chart-5: #304160;
 
     --color-glass-bg: rgb(20 20 26 / 0.7);
     --color-glass-border: rgb(255 255 255 / 0.08);
@@ -159,6 +363,7 @@
     --shadow-card: none;
     --shadow-card-hover: none;
     --shadow-glass: 0 8px 32px 0 rgb(0 0 0 / 0.35);
+    --shadow-nav: 0 7px 32px rgb(0 0 0 / 0.31);
   }
 }
 
@@ -207,13 +412,44 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  font-feature-settings: "ss01", "cv11";
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "ss01", "cv11", "tnum";
   margin: 0;
   text-rendering: optimizeLegibility;
 }
 
 button {
   font-family: inherit;
+}
+
+/* Visible focus ring (S11): 3px outline with offset. */
+button:focus-visible,
+a:focus-visible,
+select:focus-visible,
+input:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--color-border-focus);
+  outline-offset: 3px;
+}
+
+button:focus:not(:focus-visible),
+a:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+[tabindex]:focus:not(:focus-visible) {
+  outline: 0;
+}
+
+/* Reduced motion (S11). */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 @supports not (backdrop-filter: blur(1px)) {
