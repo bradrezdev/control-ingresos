@@ -11,8 +11,8 @@
  * persists through `useTransactionSubmit` (the same path as the entry
  * page).
  */
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { useNavigate } from "react-router";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router";
 import { Filter, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -92,6 +92,29 @@ export function Transactions(): React.JSX.Element {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [retryNonce, setRetryNonce] = useState(0);
+
+  // Deep link: /transactions?card=<cardId>&from=<YYYY-MM-DD>&to=<YYYY-MM-DD>
+  // (S14). The window replaces the month bounds, so the card's whole
+  // history is reachable from the Tarjetas screen.
+  const [searchParams] = useSearchParams();
+  const deepLinkApplied = useRef(false);
+  useEffect(() => {
+    if (deepLinkApplied.current) return;
+    const cardId = searchParams.get("card");
+    const from = searchParams.get("from");
+    const to = searchParams.get("to");
+    if (!cardId && !from && !to) return;
+    deepLinkApplied.current = true;
+    setFilters((prev) => ({
+      ...prev,
+      advanced: {
+        ...prev.advanced,
+        cardId: cardId ?? prev.advanced.cardId,
+        fromDate: from ?? prev.advanced.fromDate,
+        toDate: to ?? prev.advanced.toDate,
+      },
+    }));
+  }, [searchParams]);
 
   // Any period or filter change restarts the incremental list at 20 rows.
   useEffect(() => {

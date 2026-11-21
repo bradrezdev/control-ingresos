@@ -512,7 +512,7 @@ export function computeExpectedPayment(
       if (monthOf(installment.date) !== dueMonth) continue;
       installments.push({
         id: `${tx.id}:${installment.n}`,
-        description: `${tx.description} · cuota ${installment.n} de ${tx.msiMonths}`,
+        description: tx.description,
         date: installment.date,
         cents: installment.cents,
         installment: { n: installment.n, of: tx.msiMonths as number },

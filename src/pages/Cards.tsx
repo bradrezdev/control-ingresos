@@ -8,6 +8,7 @@
  */
 import { useNavigate } from "react-router";
 import { CardsError, CardsSkeleton, CardsScreen } from "@/features/cards";
+import { CardsSheets } from "@/features/cards/CardsSheets";
 import { useWalletView } from "@/features/cards/wallet";
 import { dateToMonthIso } from "@/lib/date/format";
 
@@ -31,19 +32,22 @@ export function Cards(): React.JSX.Element {
   const month = dateToMonthIso(view.referenceDate);
 
   return (
-    <CardsScreen
-      view={view}
-      onCreate={() => navigate("/cards?sheet=new")}
-      onSelectCard={selectCard}
-      onOpenInfo={() => navigate("/cards?sheet=credit")}
-      onOpenPayment={(payment) =>
-        navigate(`/cards?sheet=payment&id=${payment.card.id}`)
-      }
-      onOpenCard={(cardId) => navigate(`/cards?sheet=card&id=${cardId}`)}
-      onOpenMenu={(cardId) => navigate(`/cards?sheet=menu&id=${cardId}`)}
-      onOpenReorder={() => navigate("/cards?sheet=reorder")}
-      onOpenArchived={() => navigate("/cards?sheet=archived")}
-      onOpenAllPurchases={() => navigate(`/cards/msi?month=${month}`)}
-    />
+    <>
+      <CardsScreen
+        view={view}
+        onCreate={() => navigate("/cards?sheet=new")}
+        onSelectCard={selectCard}
+        onOpenInfo={() => navigate("/cards?sheet=credit")}
+        onOpenPayment={(payment) =>
+          navigate(`/cards?sheet=payment&id=${payment.card.id}`)
+        }
+        onOpenCard={(cardId) => navigate(`/cards?sheet=card&id=${cardId}`)}
+        onOpenMenu={(cardId) => navigate(`/cards?sheet=menu&id=${cardId}`)}
+        onOpenReorder={() => navigate("/cards?sheet=reorder")}
+        onOpenArchived={() => navigate("/cards?sheet=archived")}
+        onOpenAllPurchases={() => navigate(`/cards/msi?month=${month}`)}
+      />
+      <CardsSheets />
+    </>
   );
 }
