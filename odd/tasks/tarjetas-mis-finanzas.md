@@ -128,7 +128,7 @@ Columna 390 px · interior 14 px arriba / 16 px laterales · separación 14 px e
 | T3 | S8 (5-7), S17 | "Próximos pagos", "Compras a meses", pie con archivadas, estados vacío/error | Inline (padre) | hecha · `ab1e10e` |
 | T4 | S13, S14, S15 | Hojas: ficha de tarjeta (3 pestañas), detalle de vencimiento, "Cómo se estima el crédito", reordenar, formulario nueva tarjeta | delegada | hecha · `8784be2`, `3579643` |
 | T5 | S13, S14, S12 | Pantalla "Compras a meses" con filtros de plazo, gestos, teclado y enlaces profundos | delegada | hecha · `5c86981` |
-| T6 | S19, S20 | Verificación: respaldo de demostración, pruebas de aceptación, revisión visual 320/387/390 px | Inline (padre) | en curso |
+| T6 | S19, S20 | Verificación: respaldo de demostración, pruebas de aceptación, revisión visual 320/387/390 px | Inline (padre) | hecha · `1b6a71a` |
 
 ## Log
 
