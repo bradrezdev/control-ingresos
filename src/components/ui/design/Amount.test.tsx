@@ -13,9 +13,9 @@ describe("Amount", () => {
     expect(screen.getByText("$0.00")).toBeInTheDocument();
   });
 
-  it("renders negative amounts when sign is auto", () => {
+  it("renders negative amounts with a typographic minus sign", () => {
     render(<Amount cents={-50000} />);
-    expect(screen.getByText("-$500.00")).toBeInTheDocument();
+    expect(screen.getByText("−$500.00")).toBeInTheDocument();
   });
 
   it("forces positive sign when requested", () => {
@@ -23,9 +23,27 @@ describe("Amount", () => {
     expect(screen.getByText("$500.00")).toBeInTheDocument();
   });
 
-  it("forces negative sign when requested", () => {
+  it("forces negative sign with a typographic minus when requested", () => {
     render(<Amount cents={50000} sign="negative" />);
-    expect(screen.getByText("-$500.00")).toBeInTheDocument();
+    expect(screen.getByText("−$500.00")).toBeInTheDocument();
+  });
+
+  it("can prefix positive amounts with a plus sign for income", () => {
+    render(<Amount cents={50000} prefix="+" className="text-positive" />);
+    expect(screen.getByText("+$500.00")).toBeInTheDocument();
+  });
+
+  it("uses the provided currency code", () => {
+    render(<Amount cents={100000} currency="USD" />);
+    expect(screen.getByText("$1,000.00")).toBeInTheDocument();
+  });
+
+  it("does not add a plus prefix to zero or negative values", () => {
+    const { rerender } = render(<Amount cents={0} prefix="+" />);
+    expect(screen.getByText("$0.00")).toBeInTheDocument();
+
+    rerender(<Amount cents={-10000} prefix="+" />);
+    expect(screen.getByText("−$100.00")).toBeInTheDocument();
   });
 
   it("falls back to em-dash for non-finite values", () => {
