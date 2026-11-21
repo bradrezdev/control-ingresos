@@ -59,6 +59,16 @@
   --color-marker: #ffc15a;
   --color-neutral-bg: #eef1f6;
 
+  /* Alerta de vencimiento (DESIGN-RULES §2) */
+  --color-alert-bg: #fff1d6;
+  --color-alert-ink: #4a2e00;
+  --color-alert-icon: #ffd98a;
+
+  /* Resumen principal de Tarjetas: #0B2B66 en ambos temas (DESIGN-RULES §2) */
+  --color-wallet-hero: #0b2b66;
+  --color-wallet-hero-text: #ffffff;
+  --color-wallet-hero-dim: #b9c6e4;
+
   /* Semantic intents */
   --color-success: #0a5c3e;
   --color-positive: #0a5c3e;
@@ -243,6 +253,11 @@
   --color-marker: #ffc15a;
   --color-neutral-bg: #eef1f6;
 
+  /* Alerta de vencimiento (DESIGN-RULES §2) */
+  --color-alert-bg: #fff1d6;
+  --color-alert-ink: #4a2e00;
+  --color-alert-icon: #ffd98a;
+
   --color-success: #0a5c3e;
   --color-positive: #0a5c3e;
   --color-positive-bg: #ddf3e8;
@@ -315,6 +330,11 @@
   --color-marker: #ffc15a;
   --color-neutral-bg: #1a2438;
 
+  /* Alerta de vencimiento (DESIGN-RULES §2) */
+  --color-alert-bg: #3a2a0c;
+  --color-alert-ink: #ffc969;
+  --color-alert-icon: #5c3a12;
+
   --color-success: #7be0b0;
   --color-positive: #7be0b0;
   --color-positive-bg: #12352a;
@@ -386,6 +406,11 @@
 
     --color-marker: #ffc15a;
     --color-neutral-bg: #1a2438;
+
+  /* Alerta de vencimiento (DESIGN-RULES §2) */
+  --color-alert-bg: #3a2a0c;
+  --color-alert-ink: #ffc969;
+  --color-alert-icon: #5c3a12;
 
     --color-success: #7be0b0;
     --color-positive: #7be0b0;

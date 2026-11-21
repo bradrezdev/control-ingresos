@@ -1,4 +1,8 @@
 import { z } from 'zod';
+import { CARD_SKINS, type CardSkin } from '@/lib/cards/skin';
+
+export { CARD_SKINS };
+export type { CardSkin };
 
 /**
  * Card schema v3 — control-ingresos
@@ -16,6 +20,17 @@ import { z } from 'zod';
  * - `cutDay` and `daysToPayAfterCut` are still required for credit cards
  *   (path-specific errors via superRefine).
  */
+/**
+ * Acabado visual del plástico de la tarjeta.
+ *
+ * - `silver`: PLATA (plata con acento cobre)
+ * - `ocean`: Mercado Pago (azul)
+ * - `forest`: Stori (verde oscuro)
+ * - `ink`: marino, por defecto de las tarjetas nuevas
+ *
+ * Es un atributo de la tarjeta (no se deduce del nombre): el nombre de
+ * una tarjeta puede cambiar sin que cambie su acabado.
+ */
 export const CardSchema = z
   .object({
     id: z.uuid(),
@@ -26,6 +41,17 @@ export const CardSchema = z
     daysToPayAfterCut: z.number().int().min(1).max(62).optional(),
     creditLimit: z.number().positive().optional(),
     priority: z.number().int().default(0),
+    /**
+     * Acabado del plástico. Ausente = se deduce del nombre (ver
+     * `skinForBank` en `src/lib/cards/skin.ts`).
+     */
+    skin: z.enum(CARD_SKINS).optional(),
+    /**
+     * Tarjeta archivada: deja de aparecer en la cartera y sale de los
+     * totales, pero conserva sus movimientos y sus reglas de pagos fijos.
+     * Ausente = activa.
+     */
+    archived: z.boolean().optional(),
     createdAt: z.iso.datetime(),
     updatedAt: z.iso.datetime(),
   })
