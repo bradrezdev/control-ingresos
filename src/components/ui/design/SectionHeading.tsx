@@ -27,7 +27,7 @@ export function SectionHeading({
       className={cn("flex items-center justify-between gap-3", className)}
       {...props}
     >
-      <Heading className="text-[17px] font-bold leading-tight tracking-tight text-primary">
+      <Heading className="text-title font-bold leading-tight tracking-tight text-primary">
         {title}
       </Heading>
       {action ? <div className="shrink-0">{action}</div> : null}

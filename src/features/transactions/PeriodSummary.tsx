@@ -81,7 +81,7 @@ export function PeriodSummary({
             <span className="whitespace-nowrap tabular-nums text-title font-bold text-primary @max-[340px]:text-[14px]">
               {tile.value(stats, currency)}
             </span>
-            <span className="text-[11px] font-semibold text-muted">
+            <span className="text-chip font-semibold text-muted">
               {selected ? `Mostrando ${tile.foot}` : tile.foot}
             </span>
           </button>

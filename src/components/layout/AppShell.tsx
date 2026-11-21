@@ -51,7 +51,7 @@ function BottomNav(): React.JSX.Element {
           className={({ isActive }) =>
             cn(
               "group relative flex flex-col items-center justify-center",
-              "min-w-[56px] min-h-[48px] px-1.5 py-1 rounded-3xl",
+              "min-w-[56px] min-h-[48px] px-1 py-1 rounded-3xl",
               "transition-colors duration-fast ease-out-soft",
               "focus-visible:outline-offset-2",
               isActive ? "text-primary" : "text-muted hover:text-body",
@@ -63,14 +63,14 @@ function BottomNav(): React.JSX.Element {
               <span
                 className={cn(
                   "inline-flex items-center justify-center",
-                  "h-[30px] px-4 rounded-[15px]",
+                  "h-[30px] px-3 rounded-[15px]",
                   "transition-colors duration-fast ease-out-soft",
                   isActive ? "bg-selected" : "bg-transparent",
                 )}
               >
                 <item.icon className="size-5" aria-hidden strokeWidth={2} />
               </span>
-              <span className="mt-0.5 text-[11px] font-semibold leading-tight">
+              <span className="mt-0.5 text-chip font-semibold leading-tight">
                 {item.label}
               </span>
             </>
@@ -82,7 +82,7 @@ function BottomNav(): React.JSX.Element {
         to="/transactions/new"
         aria-label="Nueva transacción"
         className={cn(
-          "flex items-center justify-center",
+          "flex shrink-0 items-center justify-center",
           "size-14 rounded-full",
           "bg-button text-hero-text",
           "shadow-cta",
@@ -103,7 +103,7 @@ function BottomNav(): React.JSX.Element {
           className={({ isActive }) =>
             cn(
               "group relative flex flex-col items-center justify-center",
-              "min-w-[56px] min-h-[48px] px-1.5 py-1 rounded-3xl",
+              "min-w-[56px] min-h-[48px] px-1 py-1 rounded-3xl",
               "transition-colors duration-fast ease-out-soft",
               "focus-visible:outline-offset-2",
               isActive ? "text-primary" : "text-muted hover:text-body",
@@ -115,14 +115,14 @@ function BottomNav(): React.JSX.Element {
               <span
                 className={cn(
                   "inline-flex items-center justify-center",
-                  "h-[30px] px-4 rounded-[15px]",
+                  "h-[30px] px-3 rounded-[15px]",
                   "transition-colors duration-fast ease-out-soft",
                   isActive ? "bg-selected" : "bg-transparent",
                 )}
               >
                 <item.icon className="size-5" aria-hidden strokeWidth={2} />
               </span>
-              <span className="mt-0.5 text-[11px] font-semibold leading-tight">
+              <span className="mt-0.5 text-chip font-semibold leading-tight">
                 {item.label}
               </span>
             </>

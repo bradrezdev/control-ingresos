@@ -39,7 +39,7 @@ export function FixedPaymentsScreen({
   const { summary, isLoading, error, retry } = useFixedPaymentsSummary(selectedMonth);
 
   return (
-    <main className="app-main flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <ScreenHeader
         title="Pagos fijos"
         right={
@@ -87,7 +87,7 @@ export function FixedPaymentsScreen({
           ) : null}
         </>
       )}
-    </main>
+    </div>
   );
 }
 

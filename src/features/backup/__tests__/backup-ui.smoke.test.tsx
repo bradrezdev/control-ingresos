@@ -20,13 +20,27 @@ describe("BackupSection", () => {
     render(<BackupSection />);
     expect(screen.getByText("Respaldo de datos")).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: /Exportar respaldo en JSON/i }),
+      screen.getByRole("button", { name: /Exportar información en JSON/i }),
     ).toBeInTheDocument();
     expect(
       screen.getByRole("button", {
-        name: /Importar respaldo desde JSON/i,
+        name: /Importar información desde JSON/i,
       }),
     ).toBeInTheDocument();
+  });
+
+  it("renders both actions at the same width", () => {
+    render(<BackupSection />);
+    const exportBtn = screen.getByRole("button", {
+      name: /Exportar información en JSON/i,
+    });
+    const importBtn = screen.getByRole("button", {
+      name: /Importar información desde JSON/i,
+    });
+    // Same size means the same layout contract: both stretch to the
+    // container width instead of one sizing to its content.
+    expect(exportBtn.className).toContain("w-full");
+    expect(importBtn.className).toContain("w-full");
   });
 
   it("opens the import dialog when clicking Import", async () => {
@@ -35,7 +49,7 @@ describe("BackupSection", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
     await user.click(
       screen.getByRole("button", {
-        name: /Importar respaldo desde JSON/i,
+        name: /Importar información desde JSON/i,
       }),
     );
     expect(screen.getByRole("dialog")).toBeInTheDocument();
@@ -60,7 +74,7 @@ describe("ExportBackupButton", () => {
   it("renders with the download icon and label", () => {
     render(<ExportBackupButton />);
     expect(
-      screen.getByRole("button", { name: /Exportar respaldo en JSON/i }),
+      screen.getByRole("button", { name: /Exportar información en JSON/i }),
     ).toBeInTheDocument();
   });
 });

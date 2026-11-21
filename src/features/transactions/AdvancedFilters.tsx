@@ -51,7 +51,7 @@ export function AdvancedFilters({ filters, onChange, onApply, onClear }: Advance
         <legend className="text-aux font-medium text-muted mb-2">Rango personalizado</legend>
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="filter-from" className="text-[11px] font-medium text-muted">
+            <label htmlFor="filter-from" className="text-chip font-medium text-muted">
               Desde
             </label>
             <input
@@ -63,7 +63,7 @@ export function AdvancedFilters({ filters, onChange, onApply, onClear }: Advance
             />
           </div>
           <div className="flex flex-col gap-1.5">
-            <label htmlFor="filter-to" className="text-[11px] font-medium text-muted">
+            <label htmlFor="filter-to" className="text-chip font-medium text-muted">
               Hasta
             </label>
             <input

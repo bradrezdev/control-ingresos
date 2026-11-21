@@ -24,16 +24,17 @@ export function BackupSection(): React.JSX.Element {
         de este dispositivo.
       </p>
 
-      <div className="mt-4 flex flex-col sm:flex-row gap-3 sm:items-start">
-        <ExportBackupButton />
+      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <ExportBackupButton className="w-full" />
         <Button
           type="button"
           variant="secondary"
+          className="w-full"
           leftIcon={<Upload className="size-4" aria-hidden />}
           onClick={() => setImportOpen(true)}
-          aria-label="Importar respaldo desde JSON"
+          aria-label="Importar información desde JSON"
         >
-          Importar desde JSON
+          Importar información
         </Button>
       </div>
 

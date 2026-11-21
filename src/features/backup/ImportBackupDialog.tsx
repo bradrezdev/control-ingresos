@@ -244,7 +244,7 @@ function PreviewStep({
         <p className="text-sm font-medium text-[var(--color-text-body)] break-all">
           {file?.name ?? "—"}
         </p>
-        <p className="text-[11px] text-[var(--color-text-muted)] mt-1">
+        <p className="text-chip text-[var(--color-text-muted)] mt-1">
           Exportado el{" "}
           <time dateTime={payload.exportedAt}>
             {new Date(payload.exportedAt).toLocaleString()}

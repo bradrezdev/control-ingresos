@@ -70,17 +70,17 @@ export function CardBlock({
         }}
       >
         <span
-          className="text-[11px] font-semibold uppercase tracking-widest"
+          className="text-chip font-semibold uppercase tracking-widest"
           style={{ color: tint.face.muted }}
         >
           {typeLabel}
         </span>
         <span className="min-w-0">
-          <span className="block truncate text-[20px] font-bold leading-tight tracking-tight">
+          <span className="block truncate text-brand font-bold leading-tight tracking-tight">
             {card.bank}
           </span>
           <span
-            className="mt-0.5 block truncate text-[13px] font-medium"
+            className="mt-0.5 block truncate text-aux font-medium"
             style={{ color: tint.face.muted }}
           >
             {card.holderName}

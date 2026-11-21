@@ -103,4 +103,33 @@ describe("AppShell", () => {
     );
     expect(screen.getByTestId("location")).not.toHaveTextContent("openCreate");
   });
+
+  it("keeps the + button circular on narrow screens", () => {
+    render(
+      <Wrapper>
+        <AppShell>
+          <div>Content</div>
+        </AppShell>
+      </Wrapper>,
+    );
+    const addButton = screen.getByRole("link", { name: "Nueva transacción" });
+
+    // A shrinkable FAB loses width when the bar gets tight and turns the
+    // circle into a pill; it must keep its 56x56 box.
+    expect(addButton.className).toContain("shrink-0");
+    expect(addButton.className).toContain("rounded-full");
+    expect(addButton.className).toContain("size-14");
+  });
+
+  it("applies the page padding once, on the shell", () => {
+    render(
+      <Wrapper>
+        <AppShell>
+          <div>Content</div>
+        </AppShell>
+      </Wrapper>,
+    );
+    // Exactly one padded column: the shell owns it.
+    expect(document.querySelectorAll("main.app-main")).toHaveLength(1);
+  });
 });
