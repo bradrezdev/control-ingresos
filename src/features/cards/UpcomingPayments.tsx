@@ -45,10 +45,10 @@ export function UpcomingPayments({
               <CalendarDays className="size-5" strokeWidth={2} />
             </span>
             <span className="flex min-w-0 flex-1 flex-col gap-0.5">
-              <b className="truncate text-base font-semibold text-ink">
+              <b className="text-base font-semibold text-ink">
                 {payment.card.bank}
               </b>
-              <span className="truncate text-aux text-muted">
+              <span className="text-aux text-muted">
                 Vence el {formatDayAndMonth(utcDateToLocal(payment.due))}
               </span>
             </span>

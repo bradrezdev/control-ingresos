@@ -43,7 +43,7 @@ export function CreditSummary({
 
   return (
     <section
-      className="bg-wallet-hero text-wallet-hero-text rounded-hero overflow-hidden p-2.5 px-5 pb-5"
+      className="bg-wallet-hero text-wallet-hero-text rounded-hero overflow-hidden wallet-hero"
       aria-label="Crédito de todas las tarjetas"
     >
       <div className="flex items-start justify-between gap-2">
@@ -88,7 +88,7 @@ export function CreditSummary({
           <small className="block text-aux text-wallet-hero-dim">
             Usado estimado
           </small>
-          <b className="block text-lg font-bold tabular-nums">
+          <b className="wallet-hero-tile-value block font-bold tabular-nums">
             {formatCurrency(portfolio.usedCents, currency)}
           </b>
         </div>
@@ -96,7 +96,7 @@ export function CreditSummary({
           <small className="block text-aux text-wallet-hero-dim">
             Límite total
           </small>
-          <b className="block text-lg font-bold tabular-nums">
+          <b className="wallet-hero-tile-value block font-bold tabular-nums">
             {formatCurrency(portfolio.limitCents, currency)}
           </b>
         </div>
