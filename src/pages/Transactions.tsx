@@ -6,11 +6,13 @@
  * tiles, quick-type chips with horizontal scroll, MSI purchase/installment
  * views, day-grouped list with 20-row incremental loading, advanced filters
  * sheet, bottom detail sheet, period breakdown, and the loading / empty /
- * error states. Create + edit keep using `TransactionForm` and the same
- * persistence path (`transactionsRepo` + `useTransactionsStore`).
+ * error states. Create navigates to the full-screen `/transactions/new`
+ * page; edit keeps the shared `TransactionForm` in the detail sheet and
+ * persists through `useTransactionSubmit` (the same path as the entry
+ * page).
  */
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useLocation, useNavigate } from "react-router";
+import { useNavigate } from "react-router";
 import { Filter, Search, X } from "lucide-react";
 import { format } from "date-fns";
 import { es } from "date-fns/locale";
@@ -23,10 +25,11 @@ import { useLiveTransactions } from "@/hooks/useLiveTransactions";
 import { useLiveSettings } from "@/hooks/useLiveSettings";
 import { useTransactionsStore } from "@/stores/transactionsStore";
 import { useUiStore } from "@/stores/uiStore";
-import { transactionsRepo } from "@/db/repositories";
 import {
   TransactionForm,
   DeleteTransactionConfirm,
+  collectCategories,
+  useTransactionSubmit,
   type TransactionFormValues_Output,
 } from "@/features/transactions";
 import { MonthSelector } from "@/features/transactions/MonthSelector";
@@ -52,9 +55,9 @@ import {
   type TransactionListItem,
 } from "@/features/transactions/types";
 import { monthIsoToDate } from "@/lib/date/format";
-import type { MsiTerm, Transaction } from "@/db/schemas/transaction";
+import type { Transaction } from "@/db/schemas/transaction";
 
-type DrawerMode = "closed" | "create" | "edit";
+type DrawerMode = "closed" | "edit";
 
 const PAGE_SIZE = 20;
 
@@ -70,15 +73,14 @@ interface AppliedChip {
 }
 
 export function Transactions(): React.JSX.Element {
-  const location = useLocation();
   const navigate = useNavigate();
   const transactions = useLiveTransactions();
   const cards = useLiveCards();
   const settings = useLiveSettings();
   const currentMonth = useUiStore((s) => s.currentMonth);
   const setCurrentMonth = useUiStore((s) => s.setCurrentMonth);
-  const update = useTransactionsStore((s) => s.update);
   const remove = useTransactionsStore((s) => s.remove);
+  const { updateTransaction } = useTransactionSubmit(settings?.currency ?? "MXN");
 
   const [drawer, setDrawer] = useState<DrawerMode>("closed");
   const [editing, setEditing] = useState<Transaction | null>(null);
@@ -90,14 +92,6 @@ export function Transactions(): React.JSX.Element {
   const [filterSheetOpen, setFilterSheetOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [retryNonce, setRetryNonce] = useState(0);
-
-  useEffect(() => {
-    if (location.state?.openCreate) {
-      setEditing(null);
-      setDrawer("create");
-      navigate(location.pathname, { replace: true });
-    }
-  }, [location.state, location.pathname, navigate]);
 
   // Any period or filter change restarts the incremental list at 20 rows.
   useEffect(() => {
@@ -165,8 +159,8 @@ export function Transactions(): React.JSX.Element {
   const closeFilterSheetDrawer = useCallback(() => setFilterSheetOpen(false), []);
 
   function openCreate(): void {
-    setEditing(null);
-    setDrawer("create");
+    // S9: the empty state routes to the full-screen entry page.
+    navigate("/transactions/new");
   }
 
   function onSelectItem(item: TransactionListItem): void {
@@ -209,84 +203,11 @@ export function Transactions(): React.JSX.Element {
 
   async function onSubmitForm(values: TransactionFormValues_Output): Promise<void> {
     // El form ya entrega `amount` en centavos enteros (ver TransactionForm:
-    // passthrough directo de onChangeCents). Multiplicar por 100 aquí
-    // duplicaba el factor y rompía la persistencia.
-    const amount = values.amount;
-    const repo = transactionsRepo;
-    if (editing) {
-      if (values.type === "income") {
-        await update(editing.id, {
-          type: "income",
-          amount,
-          description: values.description,
-          date: values.date,
-          category: values.category,
-          paymentMethod: values.paymentMethod as "cash" | "transfer",
-        } as Partial<Transaction>);
-      } else if (values.type === "expense") {
-        await update(editing.id, {
-          type: "expense",
-          amount,
-          description: values.description,
-          date: values.date,
-          category: values.category,
-          paymentMethod: values.paymentMethod as "cash" | "debit" | "credit" | "transfer",
-          ...(values.cardId ? { cardId: values.cardId } : {}),
-        } as Partial<Transaction>);
-      } else {
-        await update(editing.id, {
-          type: "expense_msi",
-          amount,
-          description: values.description,
-          date: values.date,
-          category: values.category,
-          paymentMethod: "credit",
-          cardId: values.cardId ?? "",
-          msiMonths: (values.msiMonths ?? 3) as MsiTerm,
-          msiStartDate: values.msiStartDate ?? values.date,
-        } as Partial<Transaction>);
-      }
-    } else {
-      if (values.type === "income") {
-        await repo.create({
-          type: "income",
-          amount,
-          currency,
-          description: values.description,
-          date: values.date,
-          category: values.category,
-          paymentMethod: values.paymentMethod as "cash" | "transfer",
-        } as Parameters<typeof repo.create>[0]);
-      } else if (values.type === "expense") {
-        await repo.create({
-          type: "expense",
-          amount,
-          currency,
-          description: values.description,
-          date: values.date,
-          category: values.category,
-          paymentMethod: values.paymentMethod as "cash" | "debit" | "credit" | "transfer",
-          ...(values.cardId ? { cardId: values.cardId } : {}),
-        } as Parameters<typeof repo.create>[0]);
-      } else {
-        if (!values.cardId || !values.msiMonths || !values.msiStartDate) {
-          // Schema-level validation should have caught this. Bail.
-          return;
-        }
-        await repo.create({
-          type: "expense_msi",
-          amount,
-          currency,
-          description: values.description,
-          date: values.date,
-          category: values.category,
-          paymentMethod: "credit",
-          cardId: values.cardId,
-          msiMonths: values.msiMonths,
-          msiStartDate: values.msiStartDate,
-        } as Parameters<typeof repo.create>[0]);
-      }
-    }
+    // passthrough directo de onChangeCents). La persistencia vive en el
+    // hook compartido `useTransactionSubmit` (misma vía que la pantalla
+    // Nueva transacción).
+    if (!editing) return;
+    await updateTransaction(editing.id, values);
     closeDrawer();
   }
 
@@ -428,18 +349,16 @@ export function Transactions(): React.JSX.Element {
       )}
 
       <Drawer
-        open={drawer !== "closed"}
+        open={drawer === "edit"}
         onClose={closeDrawer}
-        title={drawer === "edit" ? "Editar transacción" : "Nueva transacción"}
-        description={
-          drawer === "edit"
-            ? "Edita los datos de la transacción."
-            : "Registra un ingreso, gasto o compra a MSI."
-        }
+        title="Editar transacción"
+        description="Edita los datos de la transacción."
       >
         <TransactionForm
           transaction={editing ?? undefined}
           currency={currency}
+          cards={cards ?? []}
+          suggestedCategories={collectCategories(transactions ?? [])}
           onSubmit={onSubmitForm}
           onCancel={closeDrawer}
         />

@@ -5,6 +5,12 @@ export interface ChipProps
   extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children"> {
   children: ReactNode;
   active: boolean;
+  /**
+   * Inactive surface. `surface` matches the prototype's chips on the page
+   * background; `inset` uses the secondary surface for chips rendered
+   * inside a paper card (term/category/account pickers).
+   */
+  variant?: "surface" | "inset";
 }
 
 /**
@@ -16,6 +22,7 @@ export interface ChipProps
  */
 export function Chip({
   active,
+  variant = "surface",
   children,
   className,
   ...props
@@ -31,7 +38,9 @@ export function Chip({
         "focus-visible:outline-offset-2",
         active
           ? "bg-button text-hero-text hover:bg-primary-hover"
-          : "bg-surface text-text-secondary hover:bg-selected hover:text-primary",
+          : variant === "inset"
+            ? "bg-surface-inset text-text-secondary hover:bg-selected hover:text-primary"
+            : "bg-surface text-text-secondary hover:bg-selected hover:text-primary",
         className,
       )}
       {...props}

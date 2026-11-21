@@ -3,13 +3,12 @@
  *
  * R-1 (bug 1) + R-6 (bug 6): the form's `amount` field must hold integer
  * cents and the submit payload must propagate the same cents WITHOUT any
- * additional `* 100` multiplication. The CurrencyInput already emits
- * cents; the form used to do a `displayToCents(cents) / 100` round-trip
- * that was a no-op numerically but, combined with the caller's `* 100`
- * in `pages/Transactions.tsx`, caused a 100× inflation in storage.
+ * additional `* 100` multiplication. The amount input emits cents; the
+ * form passes them straight through so the caller persists what the user
+ * typed (see `useTransactionSubmit`).
  *
- * After the fix the form passes cents straight through and the input
- * shows the user's intended dollar value.
+ * PRESERVE (T7): the same behavioral contract, asserted through the
+ * redesigned entry interface ("Monto" big input + "Guardar movimiento").
  */
 import { describe, it, expect, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
@@ -32,7 +31,7 @@ describe("TransactionForm money wiring", () => {
     expect(amountInput).toHaveValue("1000.00");
     // Fill description (required by zod) and submit.
     await user.type(screen.getByLabelText("Descripción"), "Test");
-    await user.click(screen.getByRole("button", { name: /Crear transacción/i }));
+    await user.click(screen.getByRole("button", { name: /Guardar movimiento/i }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const submitted = onSubmit.mock
@@ -51,7 +50,7 @@ describe("TransactionForm money wiring", () => {
     await user.tab();
     expect(amountInput).toHaveValue("123.45");
     await user.type(screen.getByLabelText("Descripción"), "Coffee");
-    await user.click(screen.getByRole("button", { name: /Crear transacción/i }));
+    await user.click(screen.getByRole("button", { name: /Guardar movimiento/i }));
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
     const submitted = onSubmit.mock
@@ -69,7 +68,7 @@ describe("TransactionForm money wiring", () => {
     await user.type(amountInput, "200");
     await user.tab();
     await user.type(screen.getByLabelText("Descripción"), "Test");
-    await user.click(screen.getByRole("button", { name: /Crear transacción/i }));
+    await user.click(screen.getByRole("button", { name: /Guardar movimiento/i }));
 
     const submitted = onSubmit.mock
       .calls[0]![0] as TransactionFormValues_Output;

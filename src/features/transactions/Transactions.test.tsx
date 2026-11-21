@@ -1,7 +1,7 @@
 import { describe, expect, it, vi, beforeEach, beforeAll, afterAll } from "vitest";
-import { render, screen, waitFor } from "@testing-library/react";
+import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { MemoryRouter } from "react-router";
+import { MemoryRouter, Route, Routes } from "react-router";
 import { Transactions } from "@/pages/Transactions";
 import { db } from "@/db/database";
 import { transactionsRepo, cardsRepo, settingsRepo } from "@/db/repositories";
@@ -47,7 +47,13 @@ function expenseInput(index: number, date: string, cardId?: string): Transaction
 function renderPage(): ReturnType<typeof render> {
   return render(
     <MemoryRouter initialEntries={[{ pathname: "/transactions" }]}>
-      <Transactions />
+      <Routes>
+        <Route path="/transactions" element={<Transactions />} />
+        <Route
+          path="/transactions/new"
+          element={<div>Pantalla nueva transacción</div>}
+        />
+      </Routes>
     </MemoryRouter>,
   );
 }
@@ -207,7 +213,7 @@ describe("Transactions page (redesign)", () => {
     expect(screen.queryByRole("button", { name: "Cargar más movimientos" })).not.toBeInTheDocument();
   });
 
-  it("shows an empty state with the month and an add action", async () => {
+  it("shows an empty state with the month and a navigation action", async () => {
     const user = userEvent.setup();
     await cardsRepo.create(cardInput);
     await settingsRepo.update({ monthlyLimit: 100_000, currency: "MXN" });
@@ -218,7 +224,40 @@ describe("Transactions page (redesign)", () => {
       expect(screen.getByText("Sin movimientos en noviembre")).toBeInTheDocument();
     });
     await user.click(screen.getByRole("button", { name: "Agregar movimiento" }));
-    expect(screen.getByText("Nueva transacción")).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText("Pantalla nueva transacción")).toBeInTheDocument();
+    });
+  });
+
+  it("edits a transaction from the detail sheet through the shared form", async () => {
+    const user = userEvent.setup();
+    const card = await cardsRepo.create(cardInput);
+    const created = await transactionsRepo.create(expenseInput(1, "2026-11-05", card.id));
+    await settingsRepo.update({ monthlyLimit: 100_000, currency: "MXN" });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText("Gasto 1")).toBeInTheDocument();
+    });
+    await user.click(screen.getByText("Gasto 1"));
+    await user.click(await screen.findByRole("button", { name: "Editar" }));
+
+    const drawer = await screen.findByRole("dialog", { name: "Editar transacción" });
+    expect(within(drawer).getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
+    const description = within(drawer).getByLabelText("Descripción");
+    await user.clear(description);
+    await user.type(description, "Cena editada");
+    await user.click(screen.getByRole("button", { name: "Guardar cambios" }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("dialog", { name: "Editar transacción" }),
+      ).not.toBeInTheDocument();
+    });
+    const list = await transactionsRepo.list();
+    const updated = list.find((t) => t.id === created.id);
+    expect(updated?.description).toBe("Cena editada");
   });
 
   it("removes an applied advanced filter through its chip", async () => {

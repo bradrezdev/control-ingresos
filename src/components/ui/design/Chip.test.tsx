@@ -35,4 +35,23 @@ describe("Chip", () => {
     const { container } = render(<Chip active>Enero</Chip>);
     expect(container.firstChild).toHaveClass("bg-button", "text-hero-text");
   });
+
+  it("variant=inset uses the secondary surface when inactive (chips inside cards)", () => {
+    const { container } = render(
+      <Chip active={false} variant="inset">
+        Enero
+      </Chip>,
+    );
+    expect(container.firstChild).toHaveClass("bg-surface-inset");
+    expect(container.firstChild).not.toHaveClass("bg-surface");
+  });
+
+  it("variant=inset keeps the primary active style", () => {
+    const { container } = render(
+      <Chip active variant="inset">
+        Enero
+      </Chip>,
+    );
+    expect(container.firstChild).toHaveClass("bg-button", "text-hero-text");
+  });
 });

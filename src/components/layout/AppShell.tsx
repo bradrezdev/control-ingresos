@@ -79,8 +79,7 @@ function BottomNav(): React.JSX.Element {
       ))}
 
       <Link
-        to="/transactions"
-        state={{ openCreate: true }}
+        to="/transactions/new"
         aria-label="Nueva transacción"
         className={cn(
           "flex items-center justify-center",

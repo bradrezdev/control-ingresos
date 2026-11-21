@@ -74,7 +74,7 @@ export function MsiSelector({
         value={value === null ? "" : String(value)}
         onChange={handleChange}
         disabled={disabled}
-        placeholder="Seleccioná un plazo"
+        placeholder="Elige un plazo"
         aria-label={label}
       />
     </div>
