@@ -87,23 +87,42 @@ function FacePattern({
   finish: CardFinish;
   skin: CardSkin;
 }): React.JSX.Element {
-  const paths: string[] = [];
+  const opacity = skin === "forest" || skin === "ink" ? 0.32 : 0.36;
 
+  // Azul: elipses superpuestas que barren la tarjeta.
+  if (skin === "ocean") {
+    return (
+      <svg
+        className="pointer-events-none absolute inset-0 h-full w-full"
+        viewBox="0 0 360 227"
+        preserveAspectRatio="none"
+        aria-hidden
+        style={{ opacity }}
+      >
+        <g fill="none" stroke={finish.pattern} strokeWidth={0.9}>
+          {Array.from({ length: 29 }, (_, index) => (
+            <ellipse
+              key={index}
+              cx={336 - index * 0.5}
+              cy={102 + index * 0.7}
+              rx={35 + index * 5.2}
+              ry={65 + index * 4.3}
+              transform="rotate(-31 305 95)"
+            />
+          ))}
+        </g>
+      </svg>
+    );
+  }
+
+  // Plata: una onda que cruza la tarjeta; verde y marino: curvas
+  // verticales.
+  const paths: string[] = [];
   if (skin === "silver") {
     for (let i = 0; i < 29; i += 1) {
       const y = 40 + i * 3.6;
       paths.push(
         `M-20 ${155 + i * 2} C70 ${205 + i * 1.4} 146 ${100 - i * 0.4} 221 ${y} S344 ${67 + i * 3.5} 408 ${28 + i * 2.9}`,
-      );
-    }
-  } else if (skin === "ocean") {
-    for (let i = 0; i < 29; i += 1) {
-      const cx = 336 - i * 0.5;
-      const cy = 102 + i * 0.7;
-      const rx = 35 + i * 5.2;
-      const ry = 65 + i * 4.3;
-      paths.push(
-        `<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${ry}" transform="rotate(-31 305 95)"/>`,
       );
     }
   } else {
@@ -120,7 +139,7 @@ function FacePattern({
       viewBox="0 0 360 227"
       preserveAspectRatio="none"
       aria-hidden
-      style={{ opacity: skin === "forest" || skin === "ink" ? 0.32 : 0.36 }}
+      style={{ opacity }}
     >
       <g fill="none" stroke={finish.pattern} strokeWidth={0.9}>
         {paths.map((d, index) => (
